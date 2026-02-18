@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+venv/
+temp_rec.wav
+collection.json
+.DS_Store
