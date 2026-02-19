@@ -25,6 +25,7 @@ class InputHandler:
         self._prev_b = False
 
         if IS_RASPBERRY_PI and GPIO:
+            GPIO.setwarnings(False)
             GPIO.setmode(GPIO.BCM)
             GPIO.setup(BUTTON_A_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
             GPIO.setup(BUTTON_B_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)

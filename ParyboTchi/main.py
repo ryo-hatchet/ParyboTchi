@@ -12,12 +12,161 @@ import time
 import pygame
 
 from config import SCREEN_SIZE, FPS, BG_COLOR, BLACK, IS_RASPBERRY_PI, RECORD_SECONDS
+from config import SPI_PORT, SPI_CS, SPI_DC, SPI_RST, SPI_BL, SPI_SPEED
 from audio import AudioRecognizer
 from data import SongCollection
 from character import Character
 from ui_main import MainScreen
 from ui_archive import ArchiveScreen
 from hardware import InputHandler
+
+# Waveshare GC9A01 ディスプレイドライバー
+LCD = None
+if IS_RASPBERRY_PI:
+    try:
+        import spidev
+        import RPi.GPIO as GPIO
+        from PIL import Image
+
+        class GC9A01:
+            """Waveshare 1.28inch Round LCD (GC9A01) SPIドライバー"""
+
+            def __init__(self, dc, rst, bl, spi_port=0, spi_cs=0, spi_speed=40000000):
+                self.dc = dc
+                self.rst = rst
+                self.bl = bl
+
+                GPIO.setwarnings(False)
+                GPIO.setmode(GPIO.BCM)
+                GPIO.setup(self.dc, GPIO.OUT)
+                GPIO.setup(self.rst, GPIO.OUT)
+                GPIO.setup(self.bl, GPIO.OUT)
+
+                self.spi = spidev.SpiDev()
+                self.spi.open(spi_port, spi_cs)
+                self.spi.max_speed_hz = spi_speed
+                self.spi.mode = 0
+
+                self._init_display()
+                GPIO.output(self.bl, GPIO.HIGH)  # バックライトON
+
+            def _cmd(self, cmd):
+                GPIO.output(self.dc, GPIO.LOW)
+                self.spi.writebytes([cmd])
+
+            def _data(self, data):
+                GPIO.output(self.dc, GPIO.HIGH)
+                if isinstance(data, int):
+                    self.spi.writebytes([data])
+                else:
+                    # 4096バイトずつ分割して送信
+                    for i in range(0, len(data), 4096):
+                        self.spi.writebytes(data[i:i + 4096])
+
+            def _reset(self):
+                GPIO.output(self.rst, GPIO.HIGH)
+                time.sleep(0.1)
+                GPIO.output(self.rst, GPIO.LOW)
+                time.sleep(0.1)
+                GPIO.output(self.rst, GPIO.HIGH)
+                time.sleep(0.1)
+
+            def _init_display(self):
+                self._reset()
+                self._cmd(0xEF)
+                self._cmd(0xEB); self._data(0x14)
+                self._cmd(0xFE)
+                self._cmd(0xEF)
+                self._cmd(0xEB); self._data(0x14)
+                self._cmd(0x84); self._data(0x40)
+                self._cmd(0x85); self._data(0xFF)
+                self._cmd(0x86); self._data(0xFF)
+                self._cmd(0x87); self._data(0xFF)
+                self._cmd(0x88); self._data(0x0A)
+                self._cmd(0x89); self._data(0x21)
+                self._cmd(0x8A); self._data(0x00)
+                self._cmd(0x8B); self._data(0x80)
+                self._cmd(0x8C); self._data(0x01)
+                self._cmd(0x8D); self._data(0x01)
+                self._cmd(0x8E); self._data(0xFF)
+                self._cmd(0x8F); self._data(0xFF)
+                self._cmd(0xB6); self._data(0x00); self._data(0x00)
+                self._cmd(0x36); self._data(0x18)  # メモリアクセス制御
+                self._cmd(0x3A); self._data(0x05)  # RGB565
+                self._cmd(0x90); self._data(0x08); self._data(0x08); self._data(0x08); self._data(0x08)
+                self._cmd(0xBD); self._data(0x06)
+                self._cmd(0xBC); self._data(0x00)
+                self._cmd(0xFF); self._data(0x60); self._data(0x01); self._data(0x04)
+                self._cmd(0xC3); self._data(0x13)
+                self._cmd(0xC4); self._data(0x13)
+                self._cmd(0xC9); self._data(0x22)
+                self._cmd(0xBE); self._data(0x11)
+                self._cmd(0xE1); self._data(0x10); self._data(0x0E)
+                self._cmd(0xDF); self._data(0x21); self._data(0x0c); self._data(0x02)
+                self._cmd(0xF0); self._data(0x45); self._data(0x09); self._data(0x08); self._data(0x08); self._data(0x26); self._data(0x2A)
+                self._cmd(0xF1); self._data(0x43); self._data(0x70); self._data(0x72); self._data(0x36); self._data(0x37); self._data(0x6F)
+                self._cmd(0xF2); self._data(0x45); self._data(0x09); self._data(0x08); self._data(0x08); self._data(0x26); self._data(0x2A)
+                self._cmd(0xF3); self._data(0x43); self._data(0x70); self._data(0x72); self._data(0x36); self._data(0x37); self._data(0x6F)
+                self._cmd(0xED); self._data(0x1B); self._data(0x0B)
+                self._cmd(0xAE); self._data(0x77)
+                self._cmd(0xCD); self._data(0x63)
+                self._cmd(0x70); self._data(0x07); self._data(0x07); self._data(0x04); self._data(0x0E); self._data(0x0F); self._data(0x09); self._data(0x07); self._data(0x08); self._data(0x03)
+                self._cmd(0xE8); self._data(0x34)
+                self._cmd(0x62); self._data(0x18); self._data(0x0D); self._data(0x71); self._data(0xED); self._data(0x70); self._data(0x70); self._data(0x18); self._data(0x0F); self._data(0x71); self._data(0xEF); self._data(0x70); self._data(0x70)
+                self._cmd(0x63); self._data(0x18); self._data(0x11); self._data(0x71); self._data(0xF1); self._data(0x70); self._data(0x70); self._data(0x18); self._data(0x13); self._data(0x71); self._data(0xF3); self._data(0x70); self._data(0x70)
+                self._cmd(0x64); self._data(0x28); self._data(0x29); self._data(0xF1); self._data(0x01); self._data(0xF1); self._data(0x00); self._data(0x07)
+                self._cmd(0x66); self._data(0x3C); self._data(0x00); self._data(0xCD); self._data(0x67); self._data(0x45); self._data(0x45); self._data(0x10); self._data(0x00); self._data(0x00); self._data(0x00)
+                self._cmd(0x67); self._data(0x00); self._data(0x3C); self._data(0x00); self._data(0x00); self._data(0x00); self._data(0x01); self._data(0x54); self._data(0x10); self._data(0x32); self._data(0x98)
+                self._cmd(0x74); self._data(0x10); self._data(0x85); self._data(0x80); self._data(0x00); self._data(0x00); self._data(0x4E); self._data(0x00)
+                self._cmd(0x98); self._data(0x3e); self._data(0x07)
+                self._cmd(0x35)
+                self._cmd(0x21)  # 色反転ON
+                self._cmd(0x11)  # スリープ解除
+                time.sleep(0.12)
+                self._cmd(0x29)  # ディスプレイON
+                time.sleep(0.02)
+
+            def show(self, surface):
+                """pygame Surface を RGB565 に変換してSPIで送信"""
+                # pygame surface → PIL Image → RGB565バイト列
+                raw = pygame.image.tostring(surface, "RGB")
+                img = Image.frombytes("RGB", (SCREEN_SIZE, SCREEN_SIZE), raw)
+                pixels = list(img.getdata())
+
+                buf = []
+                for r, g, b in pixels:
+                    rgb565 = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)
+                    buf.append((rgb565 >> 8) & 0xFF)
+                    buf.append(rgb565 & 0xFF)
+
+                # 描画範囲をフルスクリーンに設定
+                self._cmd(0x2A)
+                self._data(0x00); self._data(0x00)
+                self._data(0x00); self._data(0xEF)  # 239
+
+                self._cmd(0x2B)
+                self._data(0x00); self._data(0x00)
+                self._data(0x00); self._data(0xEF)  # 239
+
+                self._cmd(0x2C)
+                self._data(buf)
+
+            def cleanup(self):
+                GPIO.output(self.bl, GPIO.LOW)
+                self.spi.close()
+
+        LCD = GC9A01(
+            dc=SPI_DC,
+            rst=SPI_RST,
+            bl=SPI_BL,
+            spi_port=SPI_PORT,
+            spi_cs=SPI_CS,
+            spi_speed=SPI_SPEED,
+        )
+        print("Waveshare 1.28inch LCD 初期化完了")
+    except Exception as e:
+        print(f"LCD初期化エラー（無視して続行）: {e}")
+        LCD = None
 
 
 class App:
@@ -64,8 +213,14 @@ class App:
                 self._update(dt)
                 self._draw()
                 pygame.display.flip()
+
+                # Waveshare LCD に転送
+                if LCD:
+                    LCD.show(self.screen)
         finally:
             self.input.cleanup()
+            if LCD:
+                LCD.cleanup()
             pygame.quit()
 
     def _handle_events(self, events, dt):
