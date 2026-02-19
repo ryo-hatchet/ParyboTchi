@@ -91,7 +91,7 @@ if IS_RASPBERRY_PI:
                 self._cmd(0x8E); self._data(0xFF)
                 self._cmd(0x8F); self._data(0xFF)
                 self._cmd(0xB6); self._data(0x00); self._data(0x00)
-                self._cmd(0x36); self._data(0x18)  # メモリアクセス制御
+                self._cmd(0x36); self._data(0x00)  # メモリアクセス制御（正位置）
                 self._cmd(0x3A); self._data(0x05)  # RGB565
                 self._cmd(0x90); self._data(0x08); self._data(0x08); self._data(0x08); self._data(0x08)
                 self._cmd(0xBD); self._data(0x06)
@@ -128,16 +128,20 @@ if IS_RASPBERRY_PI:
 
             def show(self, surface):
                 """pygame Surface を RGB565 に変換してSPIで送信"""
-                # pygame surface → PIL Image → RGB565バイト列
+                import numpy as np
+                # pygame surface → numpy array → RGB565バイト列（高速・警告なし）
                 raw = pygame.image.tostring(surface, "RGB")
-                img = Image.frombytes("RGB", (SCREEN_SIZE, SCREEN_SIZE), raw)
-                pixels = list(img.getdata())
+                arr = np.frombuffer(raw, dtype=np.uint8).reshape((SCREEN_SIZE, SCREEN_SIZE, 3))
 
-                buf = []
-                for r, g, b in pixels:
-                    rgb565 = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)
-                    buf.append((rgb565 >> 8) & 0xFF)
-                    buf.append(rgb565 & 0xFF)
+                r = arr[:, :, 0].astype(np.uint16)
+                g = arr[:, :, 1].astype(np.uint16)
+                b = arr[:, :, 2].astype(np.uint16)
+                rgb565 = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)
+
+                # ビッグエンディアンで並べ替え
+                buf = np.zeros(SCREEN_SIZE * SCREEN_SIZE * 2, dtype=np.uint8)
+                buf[0::2] = (rgb565 >> 8).flatten().astype(np.uint8)
+                buf[1::2] = (rgb565 & 0xFF).flatten().astype(np.uint8)
 
                 # 描画範囲をフルスクリーンに設定
                 self._cmd(0x2A)
@@ -149,7 +153,7 @@ if IS_RASPBERRY_PI:
                 self._data(0x00); self._data(0xEF)  # 239
 
                 self._cmd(0x2C)
-                self._data(buf)
+                self._data(buf.tolist())
 
             def cleanup(self):
                 GPIO.output(self.bl, GPIO.LOW)
