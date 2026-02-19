@@ -129,8 +129,9 @@ if IS_RASPBERRY_PI:
             def show(self, surface):
                 """pygame Surface を RGB565 に変換してSPIで送信"""
                 import numpy as np
-                # pygame surface → numpy array → RGB565バイト列（高速・警告なし）
-                raw = pygame.image.tostring(surface, "RGB")
+                # 240x240 にスケール（FULLSCREEN時に実際のサイズが異なる場合に対応）
+                scaled = pygame.transform.scale(surface, (SCREEN_SIZE, SCREEN_SIZE))
+                raw = pygame.image.tostring(scaled, "RGB")
                 arr = np.frombuffer(raw, dtype=np.uint8).reshape((SCREEN_SIZE, SCREEN_SIZE, 3))
 
                 r = arr[:, :, 0].astype(np.uint16)
@@ -156,7 +157,10 @@ if IS_RASPBERRY_PI:
                 self._data(buf.tolist())
 
             def cleanup(self):
-                GPIO.output(self.bl, GPIO.LOW)
+                try:
+                    GPIO.output(self.bl, GPIO.LOW)
+                except Exception:
+                    pass
                 self.spi.close()
 
         LCD = GC9A01(
