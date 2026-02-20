@@ -61,6 +61,13 @@ class TouchHandler:
                     bouncetime=50,
                 )
             self.smbus = smbus2.SMBus(1)
+            # CST816S: ダブルタップ・スワイプを有効化
+            # IRQ_CTL レジスタ(0xFA): 0x71 = ダブルタップ+スワイプ+タッチ割り込み有効
+            try:
+                self.smbus.write_byte_data(TOUCH_I2C_ADDR, 0xFA, 0x71)
+                time.sleep(0.01)
+            except Exception as e:
+                print(f"タッチ設定レジスタ書き込みエラー: {e}")
             print("タッチパネル初期化完了")
         except Exception as e:
             print(f"タッチパネル初期化エラー（無視）: {e}")
@@ -71,12 +78,18 @@ class TouchHandler:
         if not self.smbus:
             return
         try:
-            data = self.smbus.read_i2c_block_data(TOUCH_I2C_ADDR, 0x01, 6)
-            gesture = data[0]
+            # レジスタ 0x00 から 7バイト読んで生データを確認
+            data = self.smbus.read_i2c_block_data(TOUCH_I2C_ADDR, 0x00, 7)
+            print(f"[TOUCH] raw={[hex(d) for d in data]}")
+            gesture = data[1]  # 0x01 がジェスチャーレジスタ
+            print(f"[TOUCH] gesture=0x{gesture:02X}")
             if gesture != GESTURE_NONE:
                 self._pending_gesture = gesture
-        except Exception:
-            pass
+            else:
+                # ジェスチャーなしでも単タップとして記録（デバッグ用）
+                print(f"[TOUCH] タッチ検出（ジェスチャーなし）")
+        except Exception as e:
+            print(f"[TOUCH] 読み取りエラー: {e}")
 
     def consume_gesture(self):
         """保存されたジェスチャーを1度だけ返してリセット"""

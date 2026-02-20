@@ -148,8 +148,8 @@ class Character:
         if img is None:
             return
 
-        # バウンスオフセット
-        y_offset = int(self.bounce_offset)
+        # バウンスオフセット + 5px 下にずらす
+        y_offset = int(self.bounce_offset) + 5
         surface.blit(img, (0, y_offset))
 
     def _draw_fallback(self, surface):
