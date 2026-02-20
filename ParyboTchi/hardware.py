@@ -47,28 +47,36 @@ class TouchHandler:
                 GPIO.setwarnings(False)
                 GPIO.setmode(GPIO.BCM)
                 # RST: タッチコントローラーをリセット
-                GPIO.setup(TOUCH_RST_PIN, GPIO.OUT)
-                GPIO.output(TOUCH_RST_PIN, GPIO.LOW)
-                time.sleep(0.05)
-                GPIO.output(TOUCH_RST_PIN, GPIO.HIGH)
-                time.sleep(0.1)
+                try:
+                    GPIO.setup(TOUCH_RST_PIN, GPIO.OUT)
+                    GPIO.output(TOUCH_RST_PIN, GPIO.LOW)
+                    time.sleep(0.05)
+                    GPIO.output(TOUCH_RST_PIN, GPIO.HIGH)
+                    time.sleep(0.1)
+                except Exception as e:
+                    print(f"タッチRSTエラー（無視）: {e}")
                 # INT: 立ち下がりエッジで割り込みコールバック登録
-                GPIO.setup(TOUCH_INT_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-                GPIO.add_event_detect(
-                    TOUCH_INT_PIN,
-                    GPIO.FALLING,
-                    callback=self._on_touch_interrupt,
-                    bouncetime=50,
-                )
+                try:
+                    GPIO.setup(TOUCH_INT_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+                    GPIO.add_event_detect(
+                        TOUCH_INT_PIN,
+                        GPIO.FALLING,
+                        callback=self._on_touch_interrupt,
+                        bouncetime=50,
+                    )
+                    self._int_enabled = True
+                except Exception as e:
+                    print(f"タッチINTエラー（無視）: {e}")
+                    self._int_enabled = False
             self.smbus = smbus2.SMBus(1)
             # CST816S: ダブルタップ・スワイプを有効化
-            # IRQ_CTL レジスタ(0xFA): 0x71 = ダブルタップ+スワイプ+タッチ割り込み有効
             try:
                 self.smbus.write_byte_data(TOUCH_I2C_ADDR, 0xFA, 0x71)
                 time.sleep(0.01)
+                print("タッチパネル初期化完了")
             except Exception as e:
-                print(f"タッチ設定レジスタ書き込みエラー: {e}")
-            print("タッチパネル初期化完了")
+                print(f"タッチパネルI2C接続なし（無視）: {e}")
+                self.smbus = None
         except Exception as e:
             print(f"タッチパネル初期化エラー（無視）: {e}")
             self.smbus = None
