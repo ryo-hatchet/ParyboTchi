@@ -29,44 +29,67 @@ GESTURE_DOUBLE_TAP  = 0x0B
 
 
 class TouchHandler:
-    """CST816S タッチパネルを I2C で読み取るクラス"""
+    """CST816S タッチパネルを I2C + INT ピン割り込みで読み取るクラス
+
+    INT ピンが LOW になった時だけ I2C を読み取る方式で、
+    毎フレームのポーリングより確実にジェスチャーを検出する。
+    """
 
     def __init__(self):
         self.smbus = None
-        self._last_tap_time = 0
-        self._double_tap_threshold = 0.4  # ダブルタップ判定秒数
+        self._pending_gesture = GESTURE_NONE
 
         if not IS_RASPBERRY_PI:
             return
         try:
             import smbus2
-            # タッチコントローラーリセット
             if GPIO:
                 GPIO.setwarnings(False)
                 GPIO.setmode(GPIO.BCM)
+                # RST: タッチコントローラーをリセット
                 GPIO.setup(TOUCH_RST_PIN, GPIO.OUT)
-                GPIO.setup(TOUCH_INT_PIN, GPIO.IN)
                 GPIO.output(TOUCH_RST_PIN, GPIO.LOW)
                 time.sleep(0.05)
                 GPIO.output(TOUCH_RST_PIN, GPIO.HIGH)
                 time.sleep(0.1)
+                # INT: 立ち下がりエッジで割り込みコールバック登録
+                GPIO.setup(TOUCH_INT_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+                GPIO.add_event_detect(
+                    TOUCH_INT_PIN,
+                    GPIO.FALLING,
+                    callback=self._on_touch_interrupt,
+                    bouncetime=50,
+                )
             self.smbus = smbus2.SMBus(1)
+            print("タッチパネル初期化完了")
         except Exception as e:
             print(f"タッチパネル初期化エラー（無視）: {e}")
             self.smbus = None
 
-    def read_gesture(self):
-        """ジェスチャーコードを読み取る。読み取れない場合は GESTURE_NONE"""
+    def _on_touch_interrupt(self, channel):
+        """INT ピンが落ちたら I2C を読んでジェスチャーを保存"""
         if not self.smbus:
-            return GESTURE_NONE
+            return
         try:
             data = self.smbus.read_i2c_block_data(TOUCH_I2C_ADDR, 0x01, 6)
             gesture = data[0]
-            return gesture
+            if gesture != GESTURE_NONE:
+                self._pending_gesture = gesture
         except Exception:
-            return GESTURE_NONE
+            pass
+
+    def consume_gesture(self):
+        """保存されたジェスチャーを1度だけ返してリセット"""
+        gesture = self._pending_gesture
+        self._pending_gesture = GESTURE_NONE
+        return gesture
 
     def cleanup(self):
+        if GPIO and IS_RASPBERRY_PI:
+            try:
+                GPIO.remove_event_detect(TOUCH_INT_PIN)
+            except Exception:
+                pass
         if self.smbus:
             self.smbus.close()
 
@@ -112,8 +135,8 @@ class InputHandler:
             self._prev_a = a
             self._prev_b = b
 
-            # タッチパネル
-            gesture = self.touch.read_gesture()
+            # タッチパネル（割り込みで保存されたジェスチャーを消費）
+            gesture = self.touch.consume_gesture()
             if gesture == GESTURE_DOUBLE_TAP:
                 self.double_tap = True
             elif gesture == GESTURE_SWIPE_RIGHT:

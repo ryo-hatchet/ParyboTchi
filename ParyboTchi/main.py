@@ -127,16 +127,17 @@ if IS_RASPBERRY_PI:
                 time.sleep(0.02)
 
             def show(self, surface):
-                """pygame Surface を RGB565 に変換してSPIで送信"""
+                """pygame Surface を BGR565 に変換してSPIで送信（GC9A01はBGR順）"""
                 import numpy as np
                 # 240x240 にスケール（FULLSCREEN時に実際のサイズが異なる場合に対応）
                 scaled = pygame.transform.scale(surface, (SCREEN_SIZE, SCREEN_SIZE))
                 raw = pygame.image.tostring(scaled, "RGB")
                 arr = np.frombuffer(raw, dtype=np.uint8).reshape((SCREEN_SIZE, SCREEN_SIZE, 3))
 
-                r = arr[:, :, 0].astype(np.uint16)
+                # GC9A01 は BGR 順なので R と B を入れ替える
+                r = arr[:, :, 2].astype(np.uint16)  # ← B チャンネルを R に
                 g = arr[:, :, 1].astype(np.uint16)
-                b = arr[:, :, 2].astype(np.uint16)
+                b = arr[:, :, 0].astype(np.uint16)  # ← R チャンネルを B に
                 rgb565 = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)
 
                 # ビッグエンディアンで並べ替え
