@@ -26,6 +26,7 @@ GESTURE_SWIPE_LEFT  = 0x03
 GESTURE_SWIPE_RIGHT = 0x04
 GESTURE_CLICK       = 0x05
 GESTURE_DOUBLE_TAP  = 0x0B
+GESTURE_LONG_PRESS  = 0x0C
 
 
 class TouchHandler:
@@ -71,7 +72,11 @@ class TouchHandler:
             self.smbus = smbus2.SMBus(1)
             # CST816S: ダブルタップ・スワイプを有効化
             try:
-                self.smbus.write_byte_data(TOUCH_I2C_ADDR, 0xFA, 0x71)
+                # MOTION_MASK (0xEC): Bit0=EnDClick(ダブルタップ有効)
+                self.smbus.write_byte_data(TOUCH_I2C_ADDR, 0xEC, 0x01)
+                time.sleep(0.01)
+                # IRQ_CTL (0xFA): Bit6=EnTouch, Bit5=EnChange, Bit4=EnMotion
+                self.smbus.write_byte_data(TOUCH_I2C_ADDR, 0xFA, 0x70)
                 time.sleep(0.01)
                 print("タッチパネル初期化完了")
             except Exception as e:
