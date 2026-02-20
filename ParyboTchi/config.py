@@ -48,7 +48,7 @@ CHARACTER_IMAGES = {
 }
 
 # --- GPIO設定 (Raspberry Pi) ---
-BUTTON_A_PIN = 17  # メインボタン (録音/決定)
+BUTTON_A_PIN = 22  # メインボタン (録音/決定) ※GPIO17はTP_RSTと競合するため変更
 BUTTON_B_PIN = 27  # サブボタン (画面切り替え/スクロール)
 
 # --- キャラクター成長段階 ---
