@@ -188,12 +188,15 @@ class App:
         pygame.init()
 
         if IS_RASPBERRY_PI:
-            self.screen = pygame.display.set_mode(
-                (SCREEN_SIZE, SCREEN_SIZE), pygame.FULLSCREEN,
+            # FULLSCREENは実際の解像度になるため、描画用に240x240固定バッファを用意
+            self.display = pygame.display.set_mode(
+                (SCREEN_SIZE, SCREEN_SIZE), pygame.NOFRAME,
             )
+            self.screen = pygame.Surface((SCREEN_SIZE, SCREEN_SIZE))
             pygame.mouse.set_visible(False)
         else:
-            self.screen = pygame.display.set_mode((SCREEN_SIZE, SCREEN_SIZE))
+            self.display = pygame.display.set_mode((SCREEN_SIZE, SCREEN_SIZE))
+            self.screen = self.display
             pygame.display.set_caption("ParyboTchi")
 
         self.clock = pygame.time.Clock()
@@ -220,6 +223,9 @@ class App:
                 self._handle_events(events, dt)
                 self._update(dt)
                 self._draw()
+                # 描画バッファを display に転送（PC では同一オブジェクト）
+                if IS_RASPBERRY_PI:
+                    self.display.blit(self.screen, (0, 0))
                 pygame.display.flip()
 
                 # Waveshare LCD に転送
@@ -249,20 +255,28 @@ class App:
         elif self.current_screen == self.SCREEN_ARCHIVE:
             self._handle_archive_input()
 
+    def _start_recording(self):
+        """録音を開始する共通処理"""
+        self.audio.start_recognition()
+        self._record_start_time = time.time()
+        self.character.emotion = "listening"
+        self.main_ui.result_display_timer = 0
+        self.audio.error = None
+
+    def _go_to_archive(self):
+        """アーカイブ画面に移動する共通処理"""
+        self.current_screen = self.SCREEN_ARCHIVE
+        self.archive_ui.reset_scroll()
+
     def _handle_main_input(self):
         """メイン画面の入力処理"""
-        # ボタンA: 録音開始
-        if self.input.button_a_pressed and not self.audio.is_busy:
-            self.audio.start_recognition()
-            self._record_start_time = time.time()
-            self.character.emotion = "listening"
-            self.main_ui.result_display_timer = 0
-            self.audio.error = None
+        # ボタンA or ダブルタップ: 録音開始
+        if (self.input.button_a_pressed or self.input.double_tap) and not self.audio.is_busy:
+            self._start_recording()
 
-        # ボタンB: アーカイブ画面へ
-        if self.input.button_b_pressed and not self.audio.is_busy:
-            self.current_screen = self.SCREEN_ARCHIVE
-            self.archive_ui.reset_scroll()
+        # ボタンB or 右スワイプ: アーカイブ画面へ
+        if (self.input.button_b_pressed or self.input.swipe_right) and not self.audio.is_busy:
+            self._go_to_archive()
 
     def _handle_archive_input(self):
         """アーカイブ画面の入力処理"""
@@ -270,8 +284,8 @@ class App:
         if self.input.button_a_pressed:
             self.archive_ui.scroll_down(self.collection.count)
 
-        # ボタンB: メイン画面へ戻る
-        if self.input.button_b_pressed:
+        # ボタンB or 右スワイプ: メイン画面へ戻る
+        if self.input.button_b_pressed or self.input.swipe_right:
             self.current_screen = self.SCREEN_MAIN
 
     def _update(self, dt):
