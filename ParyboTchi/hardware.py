@@ -116,7 +116,8 @@ class InputHandler:
         self.button_a_pressed = False   # 録音開始
         self.button_b_pressed = False   # アーカイブ表示
         self.double_tap = False         # タップ → 録音開始
-        self.swipe_right = False        # 右スワイプ → アーカイブ表示
+        self.swipe_left  = False        # 左スワイプ → アーカイブ表示
+        self.swipe_right = False        # 右スワイプ → メイン画面に戻る
         self._prev_a = False
         self._prev_b = False
 
@@ -133,6 +134,7 @@ class InputHandler:
         self.button_a_pressed = False
         self.button_b_pressed = False
         self.double_tap = False
+        self.swipe_left  = False
         self.swipe_right = False
 
         if IS_RASPBERRY_PI and GPIO:
@@ -152,7 +154,10 @@ class InputHandler:
             # シングルタップ・ダブルタップ → 録音開始
             if gesture in (GESTURE_CLICK, GESTURE_DOUBLE_TAP):
                 self.double_tap = True
-            # 右スワイプ → アーカイブ表示
+            # 左スワイプ → アーカイブ表示
+            elif gesture == GESTURE_SWIPE_LEFT:
+                self.swipe_left = True
+            # 右スワイプ → メイン画面に戻る
             elif gesture == GESTURE_SWIPE_RIGHT:
                 self.swipe_right = True
 
@@ -165,9 +170,11 @@ class InputHandler:
                     elif event.key == pygame.K_x:
                         self.button_b_pressed = True
                     elif event.key == pygame.K_c:
-                        self.double_tap = True    # C キー = タップ
+                        self.double_tap = True    # C キー = タップ（録音）
+                    elif event.key == pygame.K_b:
+                        self.swipe_left = True    # B キー = 左スワイプ（アーカイブ）
                     elif event.key == pygame.K_v:
-                        self.swipe_right = True   # V キー = 右スワイプ
+                        self.swipe_right = True   # V キー = 右スワイプ（メインに戻る）
 
     def cleanup(self):
         """GPIO・タッチ後始末"""

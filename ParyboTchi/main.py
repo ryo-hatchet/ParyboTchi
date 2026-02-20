@@ -271,18 +271,18 @@ class App:
 
     def _handle_main_input(self):
         """メイン画面の入力処理"""
-        # ボタンA or ダブルタップ: 録音開始
+        # ボタンA or タップ: 録音開始
         if (self.input.button_a_pressed or self.input.double_tap) and not self.audio.is_busy:
             self._start_recording()
 
-        # ボタンB or 右スワイプ: アーカイブ画面へ
-        if (self.input.button_b_pressed or self.input.swipe_right) and not self.audio.is_busy:
+        # ボタンB or 左スワイプ: アーカイブ画面へ
+        if (self.input.button_b_pressed or self.input.swipe_left) and not self.audio.is_busy:
             self._go_to_archive()
 
     def _handle_archive_input(self):
         """アーカイブ画面の入力処理"""
-        # ボタンA: スクロール
-        if self.input.button_a_pressed:
+        # タップ or ボタンA: スクロール
+        if self.input.button_a_pressed or self.input.double_tap:
             self.archive_ui.scroll_down(self.collection.count)
 
         # ボタンB or 右スワイプ: メイン画面へ戻る
