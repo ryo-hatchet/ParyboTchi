@@ -30,15 +30,16 @@ GESTURE_LONG_PRESS  = 0x0C
 
 
 class TouchHandler:
-    """CST816S タッチパネルを I2C + INT ピン割り込みで読み取るクラス
+    """CST816S タッチパネルを I2C + INTピンポーリングで読み取るクラス
 
-    INT ピンが LOW になった時だけ I2C を読み取る方式で、
-    毎フレームのポーリングより確実にジェスチャーを検出する。
+    GPIO.add_event_detect() を使わず、poll() を毎フレーム呼ぶ方式。
+    INTピンが HIGH→LOW になった瞬間に I2C を読み取る。
     """
 
     def __init__(self):
         self.smbus = None
         self._pending_gesture = GESTURE_NONE
+        self._last_int = 1  # 前回のINTピンの状態（1=HIGH）
 
         if not IS_RASPBERRY_PI:
             return
@@ -46,7 +47,6 @@ class TouchHandler:
             import smbus2
             if GPIO:
                 GPIO.setwarnings(False)
-                GPIO.setmode(GPIO.BCM)
                 # RST: タッチコントローラーをリセット
                 try:
                     GPIO.setup(TOUCH_RST_PIN, GPIO.OUT)
@@ -56,53 +56,43 @@ class TouchHandler:
                     time.sleep(0.1)
                 except Exception as e:
                     print(f"タッチRSTエラー（無視）: {e}")
-                # INT: 立ち下がりエッジで割り込みコールバック登録
+                # INT: 入力ピンとして設定（edge detectionは使わない）
                 try:
                     GPIO.setup(TOUCH_INT_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-                    GPIO.add_event_detect(
-                        TOUCH_INT_PIN,
-                        GPIO.FALLING,
-                        callback=self._on_touch_interrupt,
-                        bouncetime=50,
-                    )
-                    self._int_enabled = True
                 except Exception as e:
-                    print(f"タッチINTエラー（無視）: {e}")
-                    self._int_enabled = False
+                    print(f"タッチINTセットアップエラー（無視）: {e}")
+
             self.smbus = smbus2.SMBus(1)
-            # CST816S: ダブルタップ・スワイプを有効化
-            try:
-                # MOTION_MASK (0xEC): Bit0=EnDClick(ダブルタップ有効)
-                self.smbus.write_byte_data(TOUCH_I2C_ADDR, 0xEC, 0x01)
-                time.sleep(0.01)
-                # IRQ_CTL (0xFA): Bit6=EnTouch, Bit5=EnChange, Bit4=EnMotion
-                self.smbus.write_byte_data(TOUCH_I2C_ADDR, 0xFA, 0x70)
-                time.sleep(0.01)
-                print("タッチパネル初期化完了")
-            except Exception as e:
-                print(f"タッチパネルI2C接続なし（無視）: {e}")
-                self.smbus = None
+            # MOTION_MASK (0xEC): Bit0=EnDClick(ダブルタップ有効)
+            self.smbus.write_byte_data(TOUCH_I2C_ADDR, 0xEC, 0x01)
+            time.sleep(0.01)
+            # IRQ_CTL (0xFA): Bit6=EnTouch, Bit5=EnChange, Bit4=EnMotion
+            self.smbus.write_byte_data(TOUCH_I2C_ADDR, 0xFA, 0x70)
+            time.sleep(0.01)
+            print("タッチパネル初期化完了")
         except Exception as e:
             print(f"タッチパネル初期化エラー（無視）: {e}")
             self.smbus = None
 
-    def _on_touch_interrupt(self, channel):
-        """INT ピンが落ちたら I2C を読んでジェスチャーを保存"""
-        if not self.smbus:
+    def poll(self):
+        """毎フレーム呼ぶ。INTピンが HIGH→LOW になった瞬間に I2C を読む"""
+        if not self.smbus or not GPIO:
             return
         try:
-            # レジスタ 0x00 から 7バイト読んで生データを確認
-            data = self.smbus.read_i2c_block_data(TOUCH_I2C_ADDR, 0x00, 7)
-            print(f"[TOUCH] raw={[hex(d) for d in data]}")
-            gesture = data[1]  # 0x01 がジェスチャーレジスタ
-            print(f"[TOUCH] gesture=0x{gesture:02X}")
-            if gesture != GESTURE_NONE:
-                self._pending_gesture = gesture
-            else:
-                # ジェスチャーなしでも単タップとして記録（デバッグ用）
-                print(f"[TOUCH] タッチ検出（ジェスチャーなし）")
+            current_int = GPIO.input(TOUCH_INT_PIN)
+            # 立ち下がりエッジ（1→0）を検出
+            if self._last_int == 1 and current_int == 0:
+                data = self.smbus.read_i2c_block_data(TOUCH_I2C_ADDR, 0x00, 7)
+                gesture = data[1]
+                print(f"[TOUCH] raw={[hex(d) for d in data]} gesture=0x{gesture:02X}")
+                if gesture != GESTURE_NONE:
+                    self._pending_gesture = gesture
+                else:
+                    # ジェスチャーコードが0x00でもタップとして扱う
+                    self._pending_gesture = GESTURE_CLICK
+            self._last_int = current_int
         except Exception as e:
-            print(f"[TOUCH] 読み取りエラー: {e}")
+            print(f"[TOUCH] ポーリングエラー: {e}")
 
     def consume_gesture(self):
         """保存されたジェスチャーを1度だけ返してリセット"""
@@ -111,11 +101,6 @@ class TouchHandler:
         return gesture
 
     def cleanup(self):
-        if GPIO and IS_RASPBERRY_PI:
-            try:
-                GPIO.remove_event_detect(TOUCH_INT_PIN)
-            except Exception:
-                pass
         if self.smbus:
             self.smbus.close()
 
@@ -124,13 +109,13 @@ class InputHandler:
     """ボタン・タッチ入力を抽象化するクラス
 
     Raspberry Pi: GPIO ボタン + タッチパネル
-    PC: キーボード (Z=ボタンA, X=ボタンB, C=ダブルタップ, V=右スワイプ)
+    PC: キーボード (Z=ボタンA, X=ボタンB, C=タップ, V=右スワイプ)
     """
 
     def __init__(self):
         self.button_a_pressed = False   # 録音開始
         self.button_b_pressed = False   # アーカイブ表示
-        self.double_tap = False         # ダブルタップ → 録音開始
+        self.double_tap = False         # タップ → 録音開始
         self.swipe_right = False        # 右スワイプ → アーカイブ表示
         self._prev_a = False
         self._prev_b = False
@@ -161,10 +146,13 @@ class InputHandler:
             self._prev_a = a
             self._prev_b = b
 
-            # タッチパネル（割り込みで保存されたジェスチャーを消費）
+            # タッチパネルをポーリング
+            self.touch.poll()
             gesture = self.touch.consume_gesture()
-            if gesture == GESTURE_DOUBLE_TAP:
+            # シングルタップ・ダブルタップ → 録音開始
+            if gesture in (GESTURE_CLICK, GESTURE_DOUBLE_TAP):
                 self.double_tap = True
+            # 右スワイプ → アーカイブ表示
             elif gesture == GESTURE_SWIPE_RIGHT:
                 self.swipe_right = True
 
@@ -177,7 +165,7 @@ class InputHandler:
                     elif event.key == pygame.K_x:
                         self.button_b_pressed = True
                     elif event.key == pygame.K_c:
-                        self.double_tap = True    # C キー = ダブルタップ
+                        self.double_tap = True    # C キー = タップ
                     elif event.key == pygame.K_v:
                         self.swipe_right = True   # V キー = 右スワイプ
 
