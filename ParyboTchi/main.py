@@ -313,8 +313,8 @@ class App:
                 self.main_ui.show_result(title, artist, is_duplicate=not is_new)
                 print(f"[APP] show_result呼び出し完了: timer={self.main_ui.result_display_timer}")
                 self.character.emotion = "happy"
-                # 結果表示時間（8秒）後にnormalに戻すタイマー
-                pygame.time.set_timer(pygame.USEREVENT + 1, 8000, loops=1)
+                # 結果表示時間（5秒）後にnormalに戻すタイマー
+                pygame.time.set_timer(pygame.USEREVENT + 1, 5000, loops=1)
             else:
                 self.character.emotion = "normal"
 

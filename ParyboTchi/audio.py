@@ -15,13 +15,14 @@ class AudioRecognizer:
     def __init__(self):
         self.is_recording = False
         self.is_analyzing = False
+        self._pipeline_running = False  # _run()全体をカバー（レースコンディション防止）
         self.result = None  # {"title": str, "artist": str} or None
         self.error = None
         self._thread = None
 
     @property
     def is_busy(self):
-        return self.is_recording or self.is_analyzing
+        return self.is_recording or self.is_analyzing or self._pipeline_running
 
     def start_recognition(self):
         """録音→認識を別スレッドで開始する"""
@@ -34,6 +35,7 @@ class AudioRecognizer:
 
     def _run(self):
         """録音→認識の実行（別スレッド）"""
+        self._pipeline_running = True  # パイプライン全体をビジー状態に
         try:
             self._record()
             asyncio.run(self._recognize())
@@ -42,6 +44,8 @@ class AudioRecognizer:
             self.error = str(e)
             self.is_recording = False
             self.is_analyzing = False
+        finally:
+            self._pipeline_running = False  # 必ず解除
 
     def _record(self):
         """マイクから録音"""
