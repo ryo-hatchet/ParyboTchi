@@ -24,10 +24,10 @@ class MainScreen:
 
     def __init__(self):
         font_path = find_jp_font()
-        self.font_large  = pygame.font.Font(font_path, 26)   # 曲名（拡大）
-        self.font_medium = pygame.font.Font(font_path, 18)   # アーティスト名（拡大）
-        self.font_small  = pygame.font.Font(font_path, 11)   # ラベル・ヒント
-        self.font_status = pygame.font.Font(font_path, 11)   # ステータス
+        self.font_large  = pygame.font.Font(font_path, 28)   # 曲名（拡大）
+        self.font_medium = pygame.font.Font(font_path, 20)   # アーティスト名（拡大）
+        self.font_small  = pygame.font.Font(font_path, 13)   # ラベル・ヒント
+        self.font_status = pygame.font.Font(font_path, 13)   # ステータス
         self.result_display_timer = 0
         self.result_data = None
         self.is_duplicate = False
@@ -108,9 +108,9 @@ class MainScreen:
 
     def _update_sparkles(self, dt):
         """キラキラパーティクルの更新"""
-        # 生成（duration内のみ）
+        # 生成（duration内のみ）: 毎フレーム5個生成（2個×2.5倍）
         if self.sparkle_timer < self.sparkle_duration:
-            for _ in range(2):
+            for _ in range(5):
                 angle = random.uniform(0, math.pi * 2)
                 dist = random.uniform(20, 85)
                 x = SCREEN_CENTER + int(math.cos(angle) * dist)
@@ -124,7 +124,7 @@ class MainScreen:
                 ]
                 self._sparkles.append({
                     "x": x, "y": y,
-                    "size": random.randint(2, 5),
+                    "size": random.randint(4, 12),  # 2〜5 → 4〜12（約2.5倍）
                     "life": max_life,
                     "max_life": max_life,
                     "color": random.choice(colors),

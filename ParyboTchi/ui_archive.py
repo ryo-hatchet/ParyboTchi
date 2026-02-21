@@ -22,10 +22,10 @@ class ArchiveScreen:
 
     def __init__(self):
         font_path = find_jp_font()
-        self.font_stage  = pygame.font.Font(font_path, 14)  # ステージ名
-        self.font_title_h = pygame.font.Font(font_path, 11) # 称号・ラベル
-        self.font_item   = pygame.font.Font(font_path, 13)  # 曲名
-        self.font_small  = pygame.font.Font(font_path, 10)  # アーティスト・ヒント
+        self.font_stage  = pygame.font.Font(font_path, 16)  # ステージ名
+        self.font_title_h = pygame.font.Font(font_path, 13) # 称号・ラベル
+        self.font_item   = pygame.font.Font(font_path, 15)  # 曲名
+        self.font_small  = pygame.font.Font(font_path, 12)  # アーティスト・ヒント
         self.scroll_offset = 0
         self.item_height = 32
         self.max_visible = 3  # 下段に表示できる最大曲数

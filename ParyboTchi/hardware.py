@@ -1,6 +1,7 @@
 """ParyboTchi - ハードウェア入力モジュール（GPIO / タッチ / キーボード抽象化）"""
 
 import time
+import threading
 import pygame
 from config import IS_RASPBERRY_PI, BUTTON_A_PIN, BUTTON_B_PIN
 
@@ -30,17 +31,23 @@ GESTURE_LONG_PRESS  = 0x0C
 
 
 class TouchHandler:
-    """CST816S タッチパネルを I2C + INTピンポーリングで読み取るクラス
+    """CST816S タッチパネルを I2C + 専用スレッドポーリングで読み取るクラス
 
-    GPIO.add_event_detect() を使わず、poll() を毎フレーム呼ぶ方式。
-    INTピンが HIGH→LOW になった瞬間に I2C を読み取る。
+    メインループ（30FPS=33ms）から独立した専用スレッドで約5ms間隔でINTピンを監視。
+    CST816SのINTパルスは数ms程度と短いため、フレームレートに依存しない方式を採用。
     """
+
+    # ポーリング間隔（秒）: 5ms → 200Hz でINTピンを監視
+    _POLL_INTERVAL = 0.005
 
     def __init__(self):
         self.smbus = None
         self._pending_gesture = GESTURE_NONE
+        self._lock = threading.Lock()  # pending_gestureのスレッドセーフアクセス用
         self._last_int = 1       # 前回のINTピンの状態（1=HIGH）
         self._touch_active = False  # タッチ中フラグ（LOW→HIGH時にタップ判定用）
+        self._running = False
+        self._thread = None
 
         if not IS_RASPBERRY_PI:
             return
@@ -71,12 +78,24 @@ class TouchHandler:
             self.smbus.write_byte_data(TOUCH_I2C_ADDR, 0xFA, 0x70)
             time.sleep(0.01)
             print("タッチパネル初期化完了")
+
+            # 専用ポーリングスレッド開始
+            self._running = True
+            self._thread = threading.Thread(target=self._poll_loop, daemon=True)
+            self._thread.start()
+            print(f"タッチポーリングスレッド開始 ({int(1/self._POLL_INTERVAL)}Hz)")
         except Exception as e:
             print(f"タッチパネル初期化エラー（無視）: {e}")
             self.smbus = None
 
-    def poll(self):
-        """毎フレーム呼ぶ。INTピンの変化を両方向で検出してI2Cを読む"""
+    def _poll_loop(self):
+        """専用スレッドで高速ポーリング（約200Hz）"""
+        while self._running:
+            self._poll_once()
+            time.sleep(self._POLL_INTERVAL)
+
+    def _poll_once(self):
+        """INTピンを1回読んでエッジ検出→I2C読み出し"""
         if not self.smbus or not GPIO:
             return
         try:
@@ -87,40 +106,48 @@ class TouchHandler:
                 data = self.smbus.read_i2c_block_data(TOUCH_I2C_ADDR, 0x00, 7)
                 gesture = data[1]
                 print(f"[TOUCH] falling gesture=0x{gesture:02X}")
-                if self._pending_gesture == GESTURE_NONE:
-                    # スワイプ系（0x01〜0x04）は立ち下がりで即確定（高感度）
-                    if gesture in (GESTURE_SWIPE_UP, GESTURE_SWIPE_DOWN,
-                                   GESTURE_SWIPE_LEFT, GESTURE_SWIPE_RIGHT):
-                        self._pending_gesture = gesture
-                    elif gesture != GESTURE_NONE:
-                        self._pending_gesture = gesture
-                self._touch_active = True
+                with self._lock:
+                    if self._pending_gesture == GESTURE_NONE:
+                        if gesture in (GESTURE_SWIPE_UP, GESTURE_SWIPE_DOWN,
+                                       GESTURE_SWIPE_LEFT, GESTURE_SWIPE_RIGHT):
+                            self._pending_gesture = gesture
+                        elif gesture != GESTURE_NONE:
+                            self._pending_gesture = gesture
+                    self._touch_active = True
 
-            # 立ち上がり（LOW→HIGH）: 指を離した → タップ確定
+            # 立ち上がり（LOW→HIGH）: 指を離した → ロングプレス・タップ確定
             elif self._last_int == 0 and current_int == 1:
                 data = self.smbus.read_i2c_block_data(TOUCH_I2C_ADDR, 0x00, 7)
                 gesture = data[1]
                 print(f"[TOUCH] rising gesture=0x{gesture:02X}")
-                if self._pending_gesture == GESTURE_NONE:
-                    if gesture != GESTURE_NONE:
-                        self._pending_gesture = gesture
-                    elif self._touch_active:
-                        # gesture=0x00で離したらシングルタップとみなす
-                        print(f"[TOUCH] tap by release")
-                        self._pending_gesture = GESTURE_CLICK
-                self._touch_active = False
+                with self._lock:
+                    if self._pending_gesture == GESTURE_NONE:
+                        if gesture != GESTURE_NONE:
+                            self._pending_gesture = gesture
+                        elif self._touch_active:
+                            print("[TOUCH] tap by release")
+                            self._pending_gesture = GESTURE_CLICK
+                    self._touch_active = False
 
             self._last_int = current_int
         except Exception as e:
             print(f"[TOUCH] ポーリングエラー: {e}")
 
+    def poll(self):
+        """後方互換：メインループから呼んでも何もしない（スレッドが担当）"""
+        pass
+
     def consume_gesture(self):
-        """保存されたジェスチャーを1度だけ返してリセット"""
-        gesture = self._pending_gesture
-        self._pending_gesture = GESTURE_NONE
+        """保存されたジェスチャーを1度だけ返してリセット（スレッドセーフ）"""
+        with self._lock:
+            gesture = self._pending_gesture
+            self._pending_gesture = GESTURE_NONE
         return gesture
 
     def cleanup(self):
+        self._running = False
+        if self._thread:
+            self._thread.join(timeout=1.0)
         if self.smbus:
             self.smbus.close()
 

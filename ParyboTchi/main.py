@@ -214,6 +214,7 @@ class App:
 
         # 録音の進捗計測用
         self._record_start_time = 0
+        self._waiting_result = False  # 認識結果を待っているフラグ
 
     def run(self):
         """メインループ"""
@@ -263,6 +264,7 @@ class App:
         self.character.emotion = "listening"
         self.main_ui.result_display_timer = 0
         self.audio.error = None
+        self._waiting_result = True  # 結果待ちフラグON
 
     def _go_to_archive(self):
         """アーカイブ画面に移動する共通処理"""
@@ -299,16 +301,17 @@ class App:
             elapsed = time.time() - self._record_start_time
             self.main_ui.recording_progress = min(elapsed / RECORD_SECONDS, 1.0)
 
-        # 認識完了チェック
-        if not self.audio.is_busy and self.character.emotion == "listening":
+        # 認識完了チェック（emotion条件を外してresultを確実に拾う）
+        if not self.audio.is_busy and self._waiting_result:
+            self._waiting_result = False
             if self.audio.result:
                 title = self.audio.result["title"]
                 artist = self.audio.result["artist"]
                 is_new = self.collection.add_song(title, artist)
                 self.main_ui.show_result(title, artist, is_duplicate=not is_new)
                 self.character.emotion = "happy"
-                # 3秒後にnormalに戻すタイマー（簡易）
-                pygame.time.set_timer(pygame.USEREVENT + 1, 3000, loops=1)
+                # 結果表示時間（8秒）後にnormalに戻すタイマー
+                pygame.time.set_timer(pygame.USEREVENT + 1, 8000, loops=1)
             else:
                 self.character.emotion = "normal"
 
