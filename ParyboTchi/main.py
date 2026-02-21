@@ -215,6 +215,7 @@ class App:
         # 録音の進捗計測用
         self._record_start_time = 0
         self._waiting_result = False  # 認識結果を待っているフラグ
+        self._prev_stage_name = self.collection.get_growth_stage()["name"]  # レベルアップ検知用
 
     def run(self):
         """メインループ"""
@@ -313,8 +314,14 @@ class App:
                 self.main_ui.show_result(title, artist, is_duplicate=not is_new)
                 print(f"[APP] show_result呼び出し完了: timer={self.main_ui.result_display_timer}")
                 self.character.emotion = "happy"
-                # 結果表示時間（5秒）後にnormalに戻すタイマー
-                pygame.time.set_timer(pygame.USEREVENT + 1, 5000, loops=1)
+                # 結果表示時間（8秒）後にnormalに戻すタイマー
+                pygame.time.set_timer(pygame.USEREVENT + 1, 8000, loops=1)
+                # レベルアップ検知
+                new_stage_name = self.collection.get_growth_stage()["name"]
+                if new_stage_name != self._prev_stage_name:
+                    print(f"[APP] レベルアップ！ {self._prev_stage_name} → {new_stage_name}")
+                    self.main_ui.show_levelup(new_stage_name)
+                    self._prev_stage_name = new_stage_name
             else:
                 self.character.emotion = "normal"
 
