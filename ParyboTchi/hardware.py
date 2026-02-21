@@ -82,17 +82,21 @@ class TouchHandler:
         try:
             current_int = GPIO.input(TOUCH_INT_PIN)
 
-            # 立ち下がり（HIGH→LOW）: タッチ開始 → スワイプ系はここで出る
+            # 立ち下がり（HIGH→LOW）: タッチ開始 → スワイプは即座に確定
             if self._last_int == 1 and current_int == 0:
                 data = self.smbus.read_i2c_block_data(TOUCH_I2C_ADDR, 0x00, 7)
                 gesture = data[1]
                 print(f"[TOUCH] falling gesture=0x{gesture:02X}")
-                if gesture != GESTURE_NONE and self._pending_gesture == GESTURE_NONE:
-                    self._pending_gesture = gesture
-                # スワイプ系（0x01〜0x04）はここで確定
+                if self._pending_gesture == GESTURE_NONE:
+                    # スワイプ系（0x01〜0x04）は立ち下がりで即確定（高感度）
+                    if gesture in (GESTURE_SWIPE_UP, GESTURE_SWIPE_DOWN,
+                                   GESTURE_SWIPE_LEFT, GESTURE_SWIPE_RIGHT):
+                        self._pending_gesture = gesture
+                    elif gesture != GESTURE_NONE:
+                        self._pending_gesture = gesture
                 self._touch_active = True
 
-            # 立ち上がり（LOW→HIGH）: 指を離した → タップ系はここで確定
+            # 立ち上がり（LOW→HIGH）: 指を離した → タップ確定
             elif self._last_int == 0 and current_int == 1:
                 data = self.smbus.read_i2c_block_data(TOUCH_I2C_ADDR, 0x00, 7)
                 gesture = data[1]
@@ -170,11 +174,11 @@ class InputHandler:
             # タップ・ダブルタップ・ロングプレス → 録音開始
             if gesture in (GESTURE_CLICK, GESTURE_DOUBLE_TAP, GESTURE_LONG_PRESS):
                 self.double_tap = True
-            # 右スワイプ → アーカイブ表示
-            elif gesture == GESTURE_SWIPE_RIGHT:
-                self.swipe_right = True
-            # 左スワイプ → メイン画面に戻る
+            # 左スワイプ(0x03) → アーカイブへ
             elif gesture == GESTURE_SWIPE_LEFT:
+                self.swipe_right = True
+            # 右スワイプ(0x04) → メイン画面に戻る
+            elif gesture == GESTURE_SWIPE_RIGHT:
                 self.swipe_left = True
 
         else:
