@@ -304,11 +304,14 @@ class App:
         # 認識完了チェック（emotion条件を外してresultを確実に拾う）
         if not self.audio.is_busy and self._waiting_result:
             self._waiting_result = False
+            print(f"[APP] 認識完了チェック: result={self.audio.result}")
             if self.audio.result:
                 title = self.audio.result["title"]
                 artist = self.audio.result["artist"]
                 is_new = self.collection.add_song(title, artist)
+                print(f"[APP] add_song: is_new={is_new}, count={self.collection.count}")
                 self.main_ui.show_result(title, artist, is_duplicate=not is_new)
+                print(f"[APP] show_result呼び出し完了: timer={self.main_ui.result_display_timer}")
                 self.character.emotion = "happy"
                 # 結果表示時間（8秒）後にnormalに戻すタイマー
                 pygame.time.set_timer(pygame.USEREVENT + 1, 8000, loops=1)

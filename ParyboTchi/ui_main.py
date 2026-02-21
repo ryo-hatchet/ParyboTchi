@@ -210,44 +210,37 @@ class MainScreen:
         surface.blit(text, rect)
 
     def _draw_result(self, surface):
-        """認識結果を大きく中央に表示（長い場合は右→左スクロール）"""
+        """認識結果を全面に表示（キャラクターより前面）"""
         data = self.result_data
 
-        # 半透明黒オーバーレイ（テキスト背景）
-        overlay = pygame.Surface((SCREEN_SIZE - 20, 115), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 160))
-        surface.blit(overlay, (10, 55))
+        # 全画面半透明黒オーバーレイ（キャラクターを完全に覆う）
+        overlay = pygame.Surface((SCREEN_SIZE, SCREEN_SIZE), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        surface.blit(overlay, (0, 0))
 
         # ラベル（みつけたよ！/ もう持ってるよ！）
         if self.is_duplicate:
             label = self.font_small.render("もう持ってるよ！", True, GRAY)
         else:
             label = self.font_small.render("みつけたよ！", True, LISTENING_COLOR)
-        label_rect = label.get_rect(centerx=SCREEN_CENTER, top=62)
+        label_rect = label.get_rect(centerx=SCREEN_CENTER, centery=75)
         surface.blit(label, label_rect)
 
-        # クリッピング領域（テキストが円形画面の外に出ないように）
-        clip_rect = pygame.Rect(10, 80, SCREEN_SIZE - 20, 110)
-        old_clip = surface.get_clip()
-        surface.set_clip(clip_rect)
-
-        # 曲名（大きく表示）
+        # 曲名（中央に大きく表示・クリッピングなし）
         title_surf = self.font_large.render(data["title"], True, TITLE_COLOR)
         if self._title_scrolling:
-            surface.blit(title_surf, (int(self._title_x), 85))
+            surface.blit(title_surf, (int(self._title_x), 100))
         else:
-            title_rect = title_surf.get_rect(centerx=SCREEN_CENTER, top=85)
+            title_rect = title_surf.get_rect(centerx=SCREEN_CENTER, centery=110)
             surface.blit(title_surf, title_rect)
 
         # アーティスト名
         artist_surf = self.font_medium.render(data["artist"], True, ARTIST_COLOR)
         if self._artist_scrolling:
-            surface.blit(artist_surf, (int(self._artist_x), 120))
+            surface.blit(artist_surf, (int(self._artist_x), 145))
         else:
-            artist_rect = artist_surf.get_rect(centerx=SCREEN_CENTER, top=120)
+            artist_rect = artist_surf.get_rect(centerx=SCREEN_CENTER, centery=148)
             surface.blit(artist_surf, artist_rect)
-
-        surface.set_clip(old_clip)
 
     def _draw_sparkle(self, surface):
         """キラキラエフェクトを描画（軽量: draw.circle使用）"""
