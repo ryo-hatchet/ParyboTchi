@@ -91,7 +91,7 @@ if IS_RASPBERRY_PI:
                 self._cmd(0x8E); self._data(0xFF)
                 self._cmd(0x8F); self._data(0xFF)
                 self._cmd(0xB6); self._data(0x00); self._data(0x00)
-                self._cmd(0x36); self._data(0x00)  # メモリアクセス制御（正位置）
+                self._cmd(0x36); self._data(0x48)  # MADCTL: MX=1(水平反転OFF), BGR=1
                 self._cmd(0x3A); self._data(0x05)  # RGB565
                 self._cmd(0x90); self._data(0x08); self._data(0x08); self._data(0x08); self._data(0x08)
                 self._cmd(0xBD); self._data(0x06)
@@ -134,10 +134,10 @@ if IS_RASPBERRY_PI:
                 raw = pygame.image.tostring(scaled, "RGB")
                 arr = np.frombuffer(raw, dtype=np.uint8).reshape((SCREEN_SIZE, SCREEN_SIZE, 3))
 
-                # GC9A01 は BGR 順なので R と B を入れ替える
-                r = arr[:, :, 2].astype(np.uint16)  # ← B チャンネルを R に
+                # MADCTL BGR=1 でHW側がBGR変換するのでソフト側はRGB順でOK
+                r = arr[:, :, 0].astype(np.uint16)
                 g = arr[:, :, 1].astype(np.uint16)
-                b = arr[:, :, 0].astype(np.uint16)  # ← R チャンネルを B に
+                b = arr[:, :, 2].astype(np.uint16)
                 rgb565 = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)
 
                 # ビッグエンディアンで並べ替え
@@ -275,8 +275,8 @@ class App:
         if (self.input.button_a_pressed or self.input.double_tap) and not self.audio.is_busy:
             self._start_recording()
 
-        # ボタンB or 左スワイプ: アーカイブ画面へ
-        if (self.input.button_b_pressed or self.input.swipe_left) and not self.audio.is_busy:
+        # ボタンB or 右スワイプ: アーカイブ画面へ
+        if (self.input.button_b_pressed or self.input.swipe_right) and not self.audio.is_busy:
             self._go_to_archive()
 
     def _handle_archive_input(self):
@@ -285,8 +285,8 @@ class App:
         if self.input.button_a_pressed or self.input.double_tap:
             self.archive_ui.scroll_down(self.collection.count)
 
-        # ボタンB or 右スワイプ: メイン画面へ戻る
-        if self.input.button_b_pressed or self.input.swipe_right:
+        # ボタンB or 左スワイプ: メイン画面へ戻る
+        if self.input.button_b_pressed or self.input.swipe_left:
             self.current_screen = self.SCREEN_MAIN
 
     def _update(self, dt):

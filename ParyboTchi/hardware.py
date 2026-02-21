@@ -149,15 +149,15 @@ class InputHandler:
             # タッチパネルをポーリング
             self.touch.poll()
             gesture = self.touch.consume_gesture()
-            # シングルタップ・ダブルタップ → 録音開始
-            if gesture in (GESTURE_CLICK, GESTURE_DOUBLE_TAP):
+            # タップ・ダブルタップ・ロングプレス → 録音開始
+            if gesture in (GESTURE_CLICK, GESTURE_DOUBLE_TAP, GESTURE_LONG_PRESS):
                 self.double_tap = True
-            # 左スワイプ → アーカイブ表示
-            elif gesture == GESTURE_SWIPE_LEFT:
-                self.swipe_left = True
-            # 右スワイプ → メイン画面に戻る
+            # 右スワイプ → アーカイブ表示
             elif gesture == GESTURE_SWIPE_RIGHT:
                 self.swipe_right = True
+            # 左スワイプ → メイン画面に戻る
+            elif gesture == GESTURE_SWIPE_LEFT:
+                self.swipe_left = True
 
         else:
             # PC: キーボード入力
