@@ -39,7 +39,8 @@ class TouchHandler:
     def __init__(self):
         self.smbus = None
         self._pending_gesture = GESTURE_NONE
-        self._last_int = 1  # 前回のINTピンの状態（1=HIGH）
+        self._last_int = 1       # 前回のINTピンの状態（1=HIGH）
+        self._touch_active = False  # タッチ中フラグ（LOW→HIGH時にタップ判定用）
 
         if not IS_RASPBERRY_PI:
             return
@@ -75,27 +76,36 @@ class TouchHandler:
             self.smbus = None
 
     def poll(self):
-        """毎フレーム呼ぶ。INTピンがLOWの間は毎回I2Cを読んでジェスチャーを拾う"""
+        """毎フレーム呼ぶ。INTピンの変化を両方向で検出してI2Cを読む"""
         if not self.smbus or not GPIO:
             return
         try:
             current_int = GPIO.input(TOUCH_INT_PIN)
-            if current_int == 0:
-                # INTがLOW（タッチ中）→ I2Cを読む
+
+            # 立ち下がり（HIGH→LOW）: タッチ開始 → スワイプ系はここで出る
+            if self._last_int == 1 and current_int == 0:
                 data = self.smbus.read_i2c_block_data(TOUCH_I2C_ADDR, 0x00, 7)
                 gesture = data[1]
-                # タッチ中で前回まだ何も登録されていない場合のみ登録（重複防止）
+                print(f"[TOUCH] falling gesture=0x{gesture:02X}")
+                if gesture != GESTURE_NONE and self._pending_gesture == GESTURE_NONE:
+                    self._pending_gesture = gesture
+                # スワイプ系（0x01〜0x04）はここで確定
+                self._touch_active = True
+
+            # 立ち上がり（LOW→HIGH）: 指を離した → タップ系はここで確定
+            elif self._last_int == 0 and current_int == 1:
+                data = self.smbus.read_i2c_block_data(TOUCH_I2C_ADDR, 0x00, 7)
+                gesture = data[1]
+                print(f"[TOUCH] rising gesture=0x{gesture:02X}")
                 if self._pending_gesture == GESTURE_NONE:
                     if gesture != GESTURE_NONE:
-                        print(f"[TOUCH] gesture=0x{gesture:02X}")
                         self._pending_gesture = gesture
-                    else:
-                        # gesture=0x00でもタッチ位置データがあればタップとして扱う
-                        # data[2]はタッチ数、data[3]/data[5]はX/Y座標
-                        touch_count = data[2] & 0x0F
-                        if touch_count > 0:
-                            print(f"[TOUCH] tap detected (gesture=0x00, count={touch_count})")
-                            self._pending_gesture = GESTURE_CLICK
+                    elif self._touch_active:
+                        # gesture=0x00で離したらシングルタップとみなす
+                        print(f"[TOUCH] tap by release")
+                        self._pending_gesture = GESTURE_CLICK
+                self._touch_active = False
+
             self._last_int = current_int
         except Exception as e:
             print(f"[TOUCH] ポーリングエラー: {e}")
