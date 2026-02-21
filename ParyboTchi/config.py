@@ -45,7 +45,12 @@ CHARACTER_IMAGES = {
     "listening": os.path.join(ASSETS_DIR, "character_listening.jpeg"),
     # happy がなければ listening → normal の順でフォールバック
     "happy": os.path.join(ASSETS_DIR, "character_happy.jpeg"),
+    # 24時間以上音楽を聴いていない場合の不機嫌顔
+    "angry": os.path.join(ASSETS_DIR, "Angry.jpg"),
 }
+
+# --- 不機嫌になるまでの時間 ---
+ANGRY_THRESHOLD_HOURS = 24  # 最後に曲を聴いてからこの時間を超えると不機嫌に
 
 # --- GPIO設定 (Raspberry Pi) ---
 BUTTON_A_PIN = 22  # メインボタン (録音/決定) ※GPIO17はTP_RSTと競合するため変更

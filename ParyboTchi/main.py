@@ -12,7 +12,7 @@ import time
 import pygame
 
 from config import SCREEN_SIZE, FPS, BG_COLOR, BLACK, IS_RASPBERRY_PI, RECORD_SECONDS
-from config import SPI_PORT, SPI_CS, SPI_DC, SPI_RST, SPI_BL, SPI_SPEED
+from config import SPI_PORT, SPI_CS, SPI_DC, SPI_RST, SPI_BL, SPI_SPEED, ANGRY_THRESHOLD_HOURS
 from audio import AudioRecognizer
 from data import SongCollection
 from character import Character
@@ -217,6 +217,12 @@ class App:
         self._waiting_result = False  # 認識結果を待っているフラグ
         self._prev_stage_name = self.collection.get_growth_stage()["name"]  # レベルアップ検知用
 
+        # 不機嫌チェック用（60秒ごとに再評価）
+        self._angry_check_timer = 0.0
+        self._ANGRY_CHECK_INTERVAL = 60.0  # 秒
+        # 起動時に即チェック
+        self._check_angry_state()
+
     def run(self):
         """メインループ"""
         try:
@@ -249,7 +255,9 @@ class App:
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
             elif event.type == pygame.USEREVENT + 1:
+                # happy → normal に戻る（その後 24時間経過なら angry に切り替え）
                 self.character.emotion = "normal"
+                self._check_angry_state()
 
         self.input.update(events)
 
@@ -292,6 +300,18 @@ class App:
         if self.input.button_b_pressed or self.input.swipe_left:
             self.current_screen = self.SCREEN_MAIN
 
+    def _check_angry_state(self):
+        """24時間以上音楽を聴いていなければ不機嫌状態にする"""
+        hours = self.collection.hours_since_last_song()
+        if hours >= ANGRY_THRESHOLD_HOURS:
+            if self.character.emotion == "normal":
+                print(f"[APP] 不機嫌モード: 最後の曲から{hours:.1f}時間経過")
+                self.character.emotion = "angry"
+        else:
+            # 24時間以内なら不機嫌を解除（録音中・happy 中は上書きしない）
+            if self.character.emotion == "angry":
+                self.character.emotion = "normal"
+
     def _update(self, dt):
         """状態更新"""
         self.character.update(dt)
@@ -314,6 +334,8 @@ class App:
                 self.main_ui.show_result(title, artist, is_duplicate=not is_new)
                 print(f"[APP] show_result呼び出し完了: timer={self.main_ui.result_display_timer}")
                 self.character.emotion = "happy"
+                # 曲を聴いたので不機嫌タイマーをリセット
+                self._angry_check_timer = 0.0
                 # 結果表示時間（8秒）後にnormalに戻すタイマー
                 pygame.time.set_timer(pygame.USEREVENT + 1, 8000, loops=1)
                 # レベルアップ検知
@@ -328,6 +350,13 @@ class App:
         # 解析中は表示更新
         if self.audio.is_analyzing:
             self.main_ui.recording_progress = 1.0
+
+        # 定期的に不機嫌状態をチェック（録音・解析中は除く）
+        if not self.audio.is_busy:
+            self._angry_check_timer += dt
+            if self._angry_check_timer >= self._ANGRY_CHECK_INTERVAL:
+                self._angry_check_timer = 0.0
+                self._check_angry_state()
 
     def _draw(self):
         """画面描画"""

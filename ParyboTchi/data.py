@@ -2,7 +2,7 @@
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 from config import DATA_FILE, GROWTH_STAGES
 
@@ -60,3 +60,18 @@ class SongCollection:
                 remaining = next_stage["min_songs"] - self.count
                 return next_stage, remaining
         return None, 0
+
+    def hours_since_last_song(self) -> float:
+        """最後に曲を追加してからの経過時間（時間）を返す。
+        曲が一度もない場合は inf を返す。
+        """
+        if not self.songs:
+            return float("inf")
+        last_date_str = self.songs[-1]["date"]  # "YYYY-MM-DD HH:MM" 形式
+        try:
+            last_dt = datetime.strptime(last_date_str, "%Y-%m-%d %H:%M")
+        except ValueError:
+            return float("inf")
+        now = datetime.now()
+        diff = now - last_dt
+        return diff.total_seconds() / 3600

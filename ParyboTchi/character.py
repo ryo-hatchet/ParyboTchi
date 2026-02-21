@@ -5,6 +5,7 @@ assets/ フォルダの表情画像を切り替えて表示する。
   - character_blink.png     : 瞬き（目を閉じた状態）
   - character_listening.png : 音楽を聴いている
   - character_happy.png     : 嬉しい（曲を見つけた）
+  - Angry.jpg               : 不機嫌（24時間以上音楽を聴いていない）
 
 画像が見つからない場合はフォールバックとして簡易描画を行う。
 """
@@ -92,6 +93,9 @@ class Character:
             # blink がなければ normal で代用
             if "blink" not in self._images:
                 self._images["blink"] = self._images["normal"]
+            # angry がなければ normal で代用
+            if "angry" not in self._images:
+                self._images["angry"] = self._images["normal"]
 
     def update(self, dt):
         """アニメーション更新"""
@@ -108,8 +112,8 @@ class Character:
 
         self.note_angle += dt * 2.5
 
-        # 瞬きロジック（normal / listening のときのみ）
-        if self.emotion in ("normal", "listening"):
+        # 瞬きロジック（normal / listening / angry のときのみ）
+        if self.emotion in ("normal", "listening", "angry"):
             self.blink_timer += dt
             if self.is_blinking:
                 # 瞬き中 → 持続時間が過ぎたら終了
@@ -185,6 +189,10 @@ class Character:
         if self.emotion == "happy":
             pygame.draw.arc(surface, (60, 60, 60),
                             (cx - 12, cy + 5, 24, 14), 3.4, 6.0, 2)
+        elif self.emotion == "angry":
+            # への字口（不機嫌）
+            pygame.draw.arc(surface, (60, 60, 60),
+                            (cx - 12, cy + 8, 24, 14), 0.2, 3.0, 2)
         else:
             pygame.draw.line(surface, (60, 60, 60),
                              (cx - 8, cy + 12), (cx + 8, cy + 12), 2)
