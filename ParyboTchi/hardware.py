@@ -33,12 +33,12 @@ GESTURE_LONG_PRESS  = 0x0C
 class TouchHandler:
     """CST816S タッチパネルを I2C + 専用スレッドポーリングで読み取るクラス
 
-    メインループ（30FPS=33ms）から独立した専用スレッドで約5ms間隔でINTピンを監視。
+    メインループ（30FPS=33ms）から独立した専用スレッドで約1ms間隔でINTピンを監視。
     CST816SのINTパルスは数ms程度と短いため、フレームレートに依存しない方式を採用。
     """
 
-    # ポーリング間隔（秒）: 5ms → 200Hz でINTピンを監視
-    _POLL_INTERVAL = 0.005
+    # ポーリング間隔（秒）: 1ms → 1000Hz でINTピンを監視
+    _POLL_INTERVAL = 0.001
 
     def __init__(self):
         self.smbus = None

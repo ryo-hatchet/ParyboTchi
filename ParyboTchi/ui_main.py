@@ -150,14 +150,15 @@ class MainScreen:
         self._draw_status(surface, collection, stage)
 
         # 録音中・解析中・結果・エラーの順で下部を切り替え
-        if audio.is_recording:
-            self._draw_recording_indicator(surface)
-        elif audio.is_analyzing:
-            self._draw_analyzing_indicator(surface)
-        elif self.result_display_timer > 0 and self.result_data:
+        # ※ 結果表示タイマーを最優先（is_analyzingより先にチェック）
+        if self.result_display_timer > 0 and self.result_data:
             self._draw_result(surface)
             if self.sparkle_timer < self.sparkle_duration:
                 self._draw_sparkle(surface)
+        elif audio.is_recording:
+            self._draw_recording_indicator(surface)
+        elif audio.is_analyzing:
+            self._draw_analyzing_indicator(surface)
         elif audio.error and not audio.is_busy:
             self._draw_error(surface, audio.error)
         else:
