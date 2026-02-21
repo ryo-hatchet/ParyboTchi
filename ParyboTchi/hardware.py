@@ -135,9 +135,10 @@ class InputHandler:
     def __init__(self):
         self.button_a_pressed = False   # 録音開始
         self.button_b_pressed = False   # アーカイブ表示
-        self.double_tap = False         # タップ → 録音開始
+        self.double_tap = False         # ロングプレス → 録音開始
         self.swipe_left  = False        # 左スワイプ → アーカイブ表示
         self.swipe_right = False        # 右スワイプ → メイン画面に戻る
+        self.swipe_down  = False        # 下スワイプ → アーカイブスクロール
         self._prev_a = False
         self._prev_b = False
 
@@ -156,6 +157,7 @@ class InputHandler:
         self.double_tap = False
         self.swipe_left  = False
         self.swipe_right = False
+        self.swipe_down  = False
 
         if IS_RASPBERRY_PI and GPIO:
             # GPIO ボタン
@@ -171,8 +173,8 @@ class InputHandler:
             # タッチパネルをポーリング
             self.touch.poll()
             gesture = self.touch.consume_gesture()
-            # タップ・ダブルタップ・ロングプレス → 録音開始
-            if gesture in (GESTURE_CLICK, GESTURE_DOUBLE_TAP, GESTURE_LONG_PRESS):
+            # ロングプレスのみ録音開始（タップ・スワイプの誤操作防止）
+            if gesture == GESTURE_LONG_PRESS:
                 self.double_tap = True
             # 左スワイプ(0x03) → アーカイブへ
             elif gesture == GESTURE_SWIPE_LEFT:
@@ -180,6 +182,9 @@ class InputHandler:
             # 右スワイプ(0x04) → メイン画面に戻る
             elif gesture == GESTURE_SWIPE_RIGHT:
                 self.swipe_left = True
+            # 下スワイプ(0x02) → アーカイブスクロール
+            elif gesture == GESTURE_SWIPE_DOWN:
+                self.swipe_down = True
 
         else:
             # PC: キーボード入力

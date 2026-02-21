@@ -1,11 +1,13 @@
 """ParyboTchi - メインUI画面（キャラクター表示・録音・結果表示）"""
 
 import math
+import random
 import pygame
 
 from config import (
     SCREEN_SIZE, SCREEN_CENTER, BG_COLOR, WHITE, BLACK, GRAY, DARK_GRAY,
     ACCENT_COLOR, LISTENING_COLOR, TEXT_COLOR, TITLE_COLOR, ARTIST_COLOR,
+    NOTE_COLOR, HAPPY_COLOR,
     RECORD_SECONDS,
 )
 from fonts import find_jp_font
@@ -13,7 +15,7 @@ from fonts import find_jp_font
 
 # スクロール設定
 _SCROLL_SPEED = 45       # ピクセル/秒
-_SCROLL_THRESHOLD = 190  # テキスト幅がこれを超えたらスクロール開始
+_SCROLL_THRESHOLD = 160  # テキスト幅がこれを超えたらスクロール開始（26pxフォント対応）
 _SCROLL_PAUSE = 1.5      # 端に達したら一時停止する秒数
 
 
@@ -22,8 +24,8 @@ class MainScreen:
 
     def __init__(self):
         font_path = find_jp_font()
-        self.font_large  = pygame.font.Font(font_path, 22)   # 曲名
-        self.font_medium = pygame.font.Font(font_path, 16)   # アーティスト名
+        self.font_large  = pygame.font.Font(font_path, 26)   # 曲名（拡大）
+        self.font_medium = pygame.font.Font(font_path, 18)   # アーティスト名（拡大）
         self.font_small  = pygame.font.Font(font_path, 11)   # ラベル・ヒント
         self.font_status = pygame.font.Font(font_path, 11)   # ステータス
         self.result_display_timer = 0
@@ -41,13 +43,25 @@ class MainScreen:
         self._artist_scrolling = False
         self._pause_timer = 0.0  # 一時停止タイマー
 
+        # 音符アニメーション
+        self.note_timer = 0.0
+        NOTE_CHARS = ["♩", "♪", "♫", "♬"]
+        self._note_surfs = [self.font_small.render(c, True, NOTE_COLOR) for c in NOTE_CHARS]
+
+        # キラキラエフェクト
+        self.sparkle_timer = 0.0
+        self.sparkle_duration = 3.0
+        self._sparkles = []
+
     def show_result(self, title, artist, is_duplicate=False):
         """認識結果を表示する"""
         self.result_data = {"title": title, "artist": artist}
         self.is_duplicate = is_duplicate
         self.result_display_timer = self.show_result_duration
-        # スクロール位置をリセット
+        # スクロール・キラキラをリセット
         self._reset_scroll(title, artist)
+        self.sparkle_timer = 0.0
+        self._sparkles = []
 
     def _reset_scroll(self, title, artist):
         """スクロール状態を初期化"""
@@ -64,8 +78,12 @@ class MainScreen:
 
     def update(self, dt):
         """タイマーとスクロール更新"""
+        self.note_timer += dt
+
         if self.result_display_timer > 0:
             self.result_display_timer -= dt
+            self.sparkle_timer += dt
+            self._update_sparkles(dt)
 
         if self.result_display_timer > 0 and self.result_data:
             self._update_scroll(dt)
@@ -88,6 +106,35 @@ class MainScreen:
         self._title_x  = advance(self._title_x,  self._title_w,  self._title_scrolling)
         self._artist_x = advance(self._artist_x, self._artist_w, self._artist_scrolling)
 
+    def _update_sparkles(self, dt):
+        """キラキラパーティクルの更新"""
+        # 生成（duration内のみ）
+        if self.sparkle_timer < self.sparkle_duration:
+            for _ in range(2):
+                angle = random.uniform(0, math.pi * 2)
+                dist = random.uniform(20, 85)
+                x = SCREEN_CENTER + int(math.cos(angle) * dist)
+                y = SCREEN_CENTER + int(math.sin(angle) * dist)
+                max_life = random.uniform(0.3, 0.8)
+                colors = [
+                    (255, 220, 100),  # 金
+                    (255, 150, 200),  # ピンク
+                    (150, 220, 255),  # 水色
+                    (200, 255, 150),  # 黄緑
+                ]
+                self._sparkles.append({
+                    "x": x, "y": y,
+                    "size": random.randint(2, 5),
+                    "life": max_life,
+                    "max_life": max_life,
+                    "color": random.choice(colors),
+                })
+
+        # 更新・削除
+        for s in self._sparkles:
+            s["life"] -= dt
+        self._sparkles = [s for s in self._sparkles if s["life"] > 0]
+
     def draw(self, surface, character, collection, audio):
         """メイン画面を描画"""
         surface.fill(BLACK)
@@ -95,8 +142,9 @@ class MainScreen:
 
         stage = collection.get_growth_stage()
 
-        # キャラクター描画
-        character.draw(surface, stage["name"])
+        # 結果表示中はキャラクターを半透明で描画
+        char_alpha = 128 if (self.result_display_timer > 0 and self.result_data) else 255
+        character.draw(surface, stage["name"], alpha=char_alpha)
 
         # 上部：ステータス表示
         self._draw_status(surface, collection, stage)
@@ -108,6 +156,8 @@ class MainScreen:
             self._draw_analyzing_indicator(surface)
         elif self.result_display_timer > 0 and self.result_data:
             self._draw_result(surface)
+            if self.sparkle_timer < self.sparkle_duration:
+                self._draw_sparkle(surface)
         elif audio.error and not audio.is_busy:
             self._draw_error(surface, audio.error)
         else:
@@ -124,7 +174,7 @@ class MainScreen:
         surface.blit(count_text, count_rect)
 
     def _draw_recording_indicator(self, surface):
-        """録音中の表示"""
+        """録音中の表示（音符アニメーション付き）"""
         text = self.font_small.render("♪ きいてるよ... ♪", True, LISTENING_COLOR)
         rect = text.get_rect(centerx=SCREEN_CENTER, bottom=SCREEN_SIZE - 50)
         surface.blit(text, rect)
@@ -142,6 +192,16 @@ class MainScreen:
                 border_radius=3,
             )
 
+        # 音符アニメーション（sin波で上下・フェード）
+        for i, note_surf in enumerate(self._note_surfs):
+            phase = (i / 4) * 2 * math.pi
+            x = SCREEN_CENTER + int(math.sin(self.note_timer * 1.2 + phase) * 35)
+            y = 100 + i * 12 + int(math.sin(self.note_timer * 2.0 + phase * 1.5) * 6)
+            alpha = int((math.sin(self.note_timer * 1.5 + phase) + 1) / 2 * 220) + 35
+            tmp = note_surf.copy()
+            tmp.set_alpha(max(35, min(255, alpha)))
+            surface.blit(tmp, tmp.get_rect(centerx=x, centery=y))
+
     def _draw_analyzing_indicator(self, surface):
         """解析中の表示"""
         text = self.font_small.render("しらべてるよ...", True, ACCENT_COLOR)
@@ -152,6 +212,11 @@ class MainScreen:
         """認識結果を大きく中央に表示（長い場合は右→左スクロール）"""
         data = self.result_data
 
+        # 半透明黒オーバーレイ（テキスト背景）
+        overlay = pygame.Surface((SCREEN_SIZE - 20, 115), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 160))
+        surface.blit(overlay, (10, 55))
+
         # ラベル（みつけたよ！/ もう持ってるよ！）
         if self.is_duplicate:
             label = self.font_small.render("もう持ってるよ！", True, GRAY)
@@ -161,16 +226,16 @@ class MainScreen:
         surface.blit(label, label_rect)
 
         # クリッピング領域（テキストが円形画面の外に出ないように）
-        clip_rect = pygame.Rect(10, 80, SCREEN_SIZE - 20, 100)
+        clip_rect = pygame.Rect(10, 80, SCREEN_SIZE - 20, 110)
         old_clip = surface.get_clip()
         surface.set_clip(clip_rect)
 
         # 曲名（大きく表示）
         title_surf = self.font_large.render(data["title"], True, TITLE_COLOR)
         if self._title_scrolling:
-            surface.blit(title_surf, (int(self._title_x), 88))
+            surface.blit(title_surf, (int(self._title_x), 85))
         else:
-            title_rect = title_surf.get_rect(centerx=SCREEN_CENTER, top=88)
+            title_rect = title_surf.get_rect(centerx=SCREEN_CENTER, top=85)
             surface.blit(title_surf, title_rect)
 
         # アーティスト名
@@ -183,6 +248,13 @@ class MainScreen:
 
         surface.set_clip(old_clip)
 
+    def _draw_sparkle(self, surface):
+        """キラキラエフェクトを描画（軽量: draw.circle使用）"""
+        for s in self._sparkles:
+            brightness = s["life"] / s["max_life"]
+            color = tuple(int(c * brightness) for c in s["color"])
+            pygame.draw.circle(surface, color, (s["x"], s["y"]), s["size"])
+
     def _draw_error(self, surface, error):
         """エラー表示"""
         text = self.font_small.render(error, True, (255, 100, 100))
@@ -191,6 +263,6 @@ class MainScreen:
 
     def _draw_hint(self, surface):
         """操作ヒント"""
-        text = self.font_small.render("タップ：きく  左スワイプ：図鑑", True, GRAY)
+        text = self.font_small.render("長押し：きく  左スワイプ：図鑑", True, GRAY)
         rect = text.get_rect(centerx=SCREEN_CENTER, bottom=SCREEN_SIZE - 28)
         surface.blit(text, rect)

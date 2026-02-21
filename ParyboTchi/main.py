@@ -281,8 +281,8 @@ class App:
 
     def _handle_archive_input(self):
         """アーカイブ画面の入力処理"""
-        # タップ or ボタンA: スクロール
-        if self.input.button_a_pressed or self.input.double_tap:
+        # 下スワイプ or ボタンA or ロングプレス: スクロール
+        if self.input.swipe_down or self.input.button_a_pressed or self.input.double_tap:
             self.archive_ui.scroll_down(self.collection.count)
 
         # ボタンB or 左スワイプ: メイン画面へ戻る

@@ -103,7 +103,8 @@ class Character:
         elif self.emotion == "listening":
             self.bounce_offset = math.sin(self.bounce_timer * 3) * 2
         else:
-            self.bounce_offset = 0
+            # ゆっくりした呼吸アニメーション（±3px）
+            self.bounce_offset = math.sin(self.bounce_timer * 1.5) * 3
 
         self.note_angle += dt * 2.5
 
@@ -127,17 +128,17 @@ class Character:
             self.is_blinking = False
             self.blink_timer = 0
 
-    def draw(self, surface, stage_name):
+    def draw(self, surface, stage_name, alpha=255):
         """キャラクターを描画"""
         if not self._images_loaded:
             self._load_images()
 
         if self._images:
-            self._draw_image(surface)
+            self._draw_image(surface, alpha=alpha)
         else:
             self._draw_fallback(surface)
 
-    def _draw_image(self, surface):
+    def _draw_image(self, surface, alpha=255):
         """画像で描画"""
         # 瞬き中はblinkを優先表示
         if self.is_blinking and "blink" in self._images:
@@ -150,7 +151,12 @@ class Character:
 
         # バウンスオフセット + 5px 下にずらす
         y_offset = int(self.bounce_offset) + 5
-        surface.blit(img, (0, y_offset))
+        if alpha < 255:
+            temp = img.copy()
+            temp.set_alpha(alpha)
+            surface.blit(temp, (0, y_offset))
+        else:
+            surface.blit(img, (0, y_offset))
 
     def _draw_fallback(self, surface):
         """画像がない場合のフォールバック（シンプルな顔）"""
