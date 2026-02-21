@@ -87,9 +87,7 @@ class TouchHandler:
                 print(f"[TOUCH] raw={[hex(d) for d in data]} gesture=0x{gesture:02X}")
                 if gesture != GESTURE_NONE:
                     self._pending_gesture = gesture
-                else:
-                    # ジェスチャーコードが0x00でもタップとして扱う
-                    self._pending_gesture = GESTURE_CLICK
+                # gesture=0x00（NONE）の場合は何もしない
             self._last_int = current_int
         except Exception as e:
             print(f"[TOUCH] ポーリングエラー: {e}")
