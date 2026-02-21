@@ -75,19 +75,27 @@ class TouchHandler:
             self.smbus = None
 
     def poll(self):
-        """毎フレーム呼ぶ。INTピンが HIGH→LOW になった瞬間に I2C を読む"""
+        """毎フレーム呼ぶ。INTピンがLOWの間は毎回I2Cを読んでジェスチャーを拾う"""
         if not self.smbus or not GPIO:
             return
         try:
             current_int = GPIO.input(TOUCH_INT_PIN)
-            # 立ち下がりエッジ（1→0）を検出
-            if self._last_int == 1 and current_int == 0:
+            if current_int == 0:
+                # INTがLOW（タッチ中）→ I2Cを読む
                 data = self.smbus.read_i2c_block_data(TOUCH_I2C_ADDR, 0x00, 7)
                 gesture = data[1]
-                print(f"[TOUCH] raw={[hex(d) for d in data]} gesture=0x{gesture:02X}")
-                if gesture != GESTURE_NONE:
-                    self._pending_gesture = gesture
-                # gesture=0x00（NONE）の場合は何もしない
+                # タッチ中で前回まだ何も登録されていない場合のみ登録（重複防止）
+                if self._pending_gesture == GESTURE_NONE:
+                    if gesture != GESTURE_NONE:
+                        print(f"[TOUCH] gesture=0x{gesture:02X}")
+                        self._pending_gesture = gesture
+                    else:
+                        # gesture=0x00でもタッチ位置データがあればタップとして扱う
+                        # data[2]はタッチ数、data[3]/data[5]はX/Y座標
+                        touch_count = data[2] & 0x0F
+                        if touch_count > 0:
+                            print(f"[TOUCH] tap detected (gesture=0x00, count={touch_count})")
+                            self._pending_gesture = GESTURE_CLICK
             self._last_int = current_int
         except Exception as e:
             print(f"[TOUCH] ポーリングエラー: {e}")
