@@ -35,7 +35,7 @@ class MainScreen:
         self.result_data = None
         self.is_duplicate = False
         self.recording_progress = 0.0
-        self.show_result_duration = 15.0  # 結果を表示する秒数
+        self.show_result_duration = 10.0  # 結果を表示する秒数（スクロールなし時）
 
         # スクロール状態
         self._title_x   = float(SCREEN_CENTER)  # 曲名のX座標（中央スタート）
