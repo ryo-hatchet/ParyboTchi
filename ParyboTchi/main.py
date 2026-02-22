@@ -355,8 +355,8 @@ class App:
                 self.character.emotion = "happy"
                 # 曲を聴いたので不機嫌タイマーをリセット
                 self._angry_check_timer = 0.0
-                # 結果表示時間（15秒）後にnormalに戻すタイマー
-                pygame.time.set_timer(pygame.USEREVENT + 1, 15000, loops=1)
+                # 結果表示（15秒）+ happy維持（5秒）= 20秒後にnormalに戻す
+                pygame.time.set_timer(pygame.USEREVENT + 1, 20000, loops=1)
                 # レベルアップ検知
                 new_stage_name = self.collection.get_growth_stage()["name"]
                 if new_stage_name != self._prev_stage_name:

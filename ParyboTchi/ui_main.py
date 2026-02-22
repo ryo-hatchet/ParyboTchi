@@ -88,6 +88,10 @@ class MainScreen:
 
         if self.result_display_timer > 0:
             self.result_display_timer -= dt
+            # タイマーが0になったら結果表示を自動クリア
+            if self.result_display_timer <= 0:
+                self.result_data = None
+                self.result_display_timer = 0
 
         if self.result_display_timer > 0 and self.result_data:
             self._update_scroll(dt)
