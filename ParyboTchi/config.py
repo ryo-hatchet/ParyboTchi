@@ -30,7 +30,7 @@ ARTIST_COLOR = LIGHT_GRAY
 
 # --- 録音設定 ---
 SAMPLE_RATE = 44100
-RECORD_SECONDS = 7
+RECORD_SECONDS = 10
 RECORD_CHANNELS = 1
 TEMP_WAV_FILE = os.path.join(os.path.dirname(__file__), "temp_rec.wav")
 

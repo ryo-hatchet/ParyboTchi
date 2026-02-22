@@ -107,7 +107,7 @@ class ArchiveScreen:
             surface.blit(max_surf, max_rect)
 
         # 操作ヒント
-        hint_surf = self.font_small.render("↓スワイプ：スクロール  右スワイプ：もどる", True, DARK_GRAY)
+        hint_surf = self.font_small.render("↑↓スワイプ：スクロール  左スワイプ：もどる", True, DARK_GRAY)
         hint_rect = hint_surf.get_rect(centerx=SCREEN_CENTER, top=102)
         surface.blit(hint_surf, hint_rect)
 

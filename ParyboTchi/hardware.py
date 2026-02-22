@@ -165,7 +165,8 @@ class InputHandler:
         self.double_tap = False         # ロングプレス → 録音開始
         self.swipe_left  = False        # 左スワイプ → アーカイブ表示
         self.swipe_right = False        # 右スワイプ → メイン画面に戻る
-        self.swipe_down  = False        # 下スワイプ → アーカイブスクロール
+        self.swipe_down  = False        # 下スワイプ → アーカイブ下スクロール
+        self.swipe_up    = False        # 上スワイプ → アーカイブ上スクロール
         self._prev_a = False
         self._prev_b = False
 
@@ -185,6 +186,7 @@ class InputHandler:
         self.swipe_left  = False
         self.swipe_right = False
         self.swipe_down  = False
+        self.swipe_up    = False
 
         if IS_RASPBERRY_PI and GPIO:
             # GPIO ボタン
@@ -209,9 +211,12 @@ class InputHandler:
             # 右スワイプ(0x04) → メイン画面に戻る
             elif gesture == GESTURE_SWIPE_RIGHT:
                 self.swipe_left = True
-            # 下スワイプ(0x02) → アーカイブスクロール
+            # 下スワイプ(0x02) → アーカイブ下スクロール
             elif gesture == GESTURE_SWIPE_DOWN:
                 self.swipe_down = True
+            # 上スワイプ(0x01) → アーカイブ上スクロール
+            elif gesture == GESTURE_SWIPE_UP:
+                self.swipe_up = True
 
         else:
             # PC: キーボード入力
@@ -227,6 +232,10 @@ class InputHandler:
                         self.swipe_left = True    # B キー = 左スワイプ（アーカイブ）
                     elif event.key == pygame.K_v:
                         self.swipe_right = True   # V キー = 右スワイプ（メインに戻る）
+                    elif event.key == pygame.K_DOWN:
+                        self.swipe_down = True    # ↓キー = 下スワイプ（下スクロール）
+                    elif event.key == pygame.K_UP:
+                        self.swipe_up = True      # ↑キー = 上スワイプ（上スクロール）
 
     def cleanup(self):
         """GPIO・タッチ後始末"""
