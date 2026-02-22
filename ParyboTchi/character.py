@@ -40,6 +40,11 @@ class Character:
         self._images = {}
         self._images_loaded = False
 
+        # 泣きアニメーション用タイマー（sad エモーション時に使用）
+        self._sad_cry_timer = 0.0
+        self._SAD_CRY_INTERVAL = 0.5  # sad ↔ sad_crying の切り替え間隔（秒）
+        self._show_crying = False  # False=sad, True=sad_crying
+
     @staticmethod
     def _crop_center_square(surface):
         """画像の中央から正方形にクロップする。
@@ -93,9 +98,13 @@ class Character:
             # blink がなければ normal で代用
             if "blink" not in self._images:
                 self._images["blink"] = self._images["normal"]
-            # angry がなければ normal で代用
-            if "angry" not in self._images:
-                self._images["angry"] = self._images["normal"]
+            # sad がなければ normal で代用
+            if "sad" not in self._images:
+                self._images["sad"] = self._images["normal"]
+            # sad_crying がなければ sad → normal の順で代用
+            if "sad_crying" not in self._images:
+                self._images["sad_crying"] = self._images.get(
+                    "sad", self._images["normal"])
 
     def update(self, dt):
         """アニメーション更新"""
@@ -112,8 +121,8 @@ class Character:
 
         self.note_angle += dt * 2.5
 
-        # 瞬きロジック（normal / listening / angry のときのみ）
-        if self.emotion in ("normal", "listening", "angry"):
+        # 瞬きロジック（normal / listening / sad のときのみ）
+        if self.emotion in ("normal", "listening", "sad"):
             self.blink_timer += dt
             if self.is_blinking:
                 # 瞬き中 → 持続時間が過ぎたら終了
@@ -132,6 +141,17 @@ class Character:
             self.is_blinking = False
             self.blink_timer = 0
 
+        # 泣きアニメーション（sad のときのみ）
+        if self.emotion == "sad":
+            self._sad_cry_timer += dt
+            if self._sad_cry_timer >= self._SAD_CRY_INTERVAL:
+                self._sad_cry_timer = 0.0
+                self._show_crying = not self._show_crying
+        else:
+            # sad 以外のときはリセット
+            self._sad_cry_timer = 0.0
+            self._show_crying = False
+
     def draw(self, surface, stage_name, alpha=255):
         """キャラクターを描画"""
         if not self._images_loaded:
@@ -144,8 +164,14 @@ class Character:
 
     def _draw_image(self, surface, alpha=255):
         """画像で描画"""
+        # sad のとき: sad ↔ sad_crying を交互表示
+        if self.emotion == "sad":
+            if self._show_crying and "sad_crying" in self._images:
+                img = self._images["sad_crying"]
+            else:
+                img = self._images.get("sad", self._images.get("normal"))
         # 瞬き中はblinkを優先表示
-        if self.is_blinking and "blink" in self._images:
+        elif self.is_blinking and "blink" in self._images:
             img = self._images["blink"]
         else:
             img = self._images.get(self.emotion, self._images.get("normal"))
@@ -189,8 +215,8 @@ class Character:
         if self.emotion == "happy":
             pygame.draw.arc(surface, (60, 60, 60),
                             (cx - 12, cy + 5, 24, 14), 3.4, 6.0, 2)
-        elif self.emotion == "angry":
-            # への字口（不機嫌）
+        elif self.emotion == "sad":
+            # への字口（悲しい）
             pygame.draw.arc(surface, (60, 60, 60),
                             (cx - 12, cy + 8, 24, 14), 0.2, 3.0, 2)
         else:
