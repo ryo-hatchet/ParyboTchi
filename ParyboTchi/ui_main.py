@@ -14,7 +14,7 @@ from fonts import find_jp_font
 
 
 # スクロール設定
-_SCROLL_SPEED = 45       # ピクセル/秒
+_SCROLL_SPEED = 54       # ピクセル/秒（45 × 1.2）
 _SCROLL_THRESHOLD = 160  # テキスト幅がこれを超えたらスクロール開始（28pxフォント対応）
 _SCROLL_PAUSE = 1.5      # 端に達したら一時停止する秒数
 
