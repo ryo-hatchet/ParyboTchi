@@ -100,22 +100,30 @@ class MainScreen:
             self.levelup_timer -= dt
 
     def _update_scroll(self, dt):
-        """スクロールX座標を更新"""
+        """スクロールX座標を更新。スクロール中のテキストが流れ終わったら結果表示を終了する"""
         if self._pause_timer > 0:
             self._pause_timer -= dt
             return
 
+        scrolling_finished = False
+
         def advance(x, text_w, scrolling):
+            nonlocal scrolling_finished
             if not scrolling:
                 return x
             x -= _SCROLL_SPEED * dt
-            # テキストが完全に左端を超えたら右端に戻す
+            # テキストが完全に左端を超えたら結果表示終了
             if x + text_w < 0:
-                return float(SCREEN_SIZE + 10)
+                scrolling_finished = True
             return x
 
         self._title_x  = advance(self._title_x,  self._title_w,  self._title_scrolling)
         self._artist_x = advance(self._artist_x, self._artist_w, self._artist_scrolling)
+
+        # どちらかのテキストが流れ終わったら結果をクリア
+        if scrolling_finished:
+            self.result_data = None
+            self.result_display_timer = 0
 
     def draw(self, surface, character, collection, audio):
         """メイン画面を描画"""
