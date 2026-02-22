@@ -113,6 +113,10 @@ class Character:
             if "sad_crying" not in self._images:
                 self._images["sad_crying"] = self._images.get(
                     "sad", self._images["normal"])
+            # dead がなければ sad → normal の順で代用
+            if "dead" not in self._images:
+                self._images["dead"] = self._images.get(
+                    "sad", self._images["normal"])
 
     def update(self, dt):
         """アニメーション更新"""
@@ -123,6 +127,8 @@ class Character:
             self.bounce_offset = math.sin(self.bounce_timer * 7) * 4
         elif self.emotion == "listening":
             self.bounce_offset = math.sin(self.bounce_timer * 3) * 2
+        elif self.emotion == "dead":
+            self.bounce_offset = 0  # dead は静止
         else:
             # ゆっくりした呼吸アニメーション（±3px）
             self.bounce_offset = math.sin(self.bounce_timer * 1.5) * 3
@@ -195,6 +201,9 @@ class Character:
                 img = self._images["sad_crying"]
             else:
                 img = self._images.get("sad", self._images.get("normal"))
+        # dead のとき: 静止表示
+        elif self.emotion == "dead":
+            img = self._images.get("dead", self._images.get("normal"))
         # 瞬き中はblinkを優先表示
         elif self.is_blinking and "blink" in self._images:
             img = self._images["blink"]
@@ -226,7 +235,13 @@ class Character:
         eye_y = cy - 8
         for side in [-1, 1]:
             ex = cx + side * 18
-            if self.is_blinking:
+            if self.emotion == "dead":
+                # バツ目（死亡）
+                pygame.draw.line(surface, (30, 30, 30),
+                                 (ex - 5, eye_y - 5), (ex + 5, eye_y + 5), 2)
+                pygame.draw.line(surface, (30, 30, 30),
+                                 (ex + 5, eye_y - 5), (ex - 5, eye_y + 5), 2)
+            elif self.is_blinking:
                 # 瞬き中は横線で目を閉じた表現
                 pygame.draw.line(surface, (30, 30, 30),
                                  (ex - 6, eye_y), (ex + 6, eye_y), 2)
@@ -244,6 +259,10 @@ class Character:
             # への字口（悲しい）
             pygame.draw.arc(surface, (60, 60, 60),
                             (cx - 12, cy + 8, 24, 14), 0.2, 3.0, 2)
+        elif self.emotion == "dead":
+            # 一直線（死亡）
+            pygame.draw.line(surface, (60, 60, 60),
+                             (cx - 8, cy + 12), (cx + 8, cy + 12), 2)
         else:
             pygame.draw.line(surface, (60, 60, 60),
                              (cx - 8, cy + 12), (cx + 8, cy + 12), 2)
