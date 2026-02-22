@@ -221,7 +221,7 @@ class App:
         self._angry_check_timer = 0.0
         self._ANGRY_CHECK_INTERVAL = 60.0  # 秒
         # 起動時に即チェック
-        self._check_angry_state()
+        self._check_sad_state()
 
     def run(self):
         """メインループ"""
@@ -255,9 +255,9 @@ class App:
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
             elif event.type == pygame.USEREVENT + 1:
-                # happy → normal に戻る（その後 24時間経過なら angry に切り替え）
+                # happy → normal に戻る（その後 24時間経過なら sad に切り替え）
                 self.character.emotion = "normal"
-                self._check_angry_state()
+                self._check_sad_state()
 
         self.input.update(events)
 
@@ -300,16 +300,16 @@ class App:
         if self.input.button_b_pressed or self.input.swipe_left:
             self.current_screen = self.SCREEN_MAIN
 
-    def _check_angry_state(self):
-        """24時間以上音楽を聴いていなければ不機嫌状態にする"""
+    def _check_sad_state(self):
+        """24時間以上音楽を聴いていなければ悲しい状態にする"""
         hours = self.collection.hours_since_last_song()
         if hours >= ANGRY_THRESHOLD_HOURS:
             if self.character.emotion == "normal":
-                print(f"[APP] 不機嫌モード: 最後の曲から{hours:.1f}時間経過")
-                self.character.emotion = "angry"
+                print(f"[APP] 悲しみモード: 最後の曲から{hours:.1f}時間経過")
+                self.character.emotion = "sad"
         else:
-            # 24時間以内なら不機嫌を解除（録音中・happy 中は上書きしない）
-            if self.character.emotion == "angry":
+            # 24時間以内なら悲しみを解除（録音中・happy 中は上書きしない）
+            if self.character.emotion == "sad":
                 self.character.emotion = "normal"
 
     def _update(self, dt):
@@ -356,7 +356,7 @@ class App:
             self._angry_check_timer += dt
             if self._angry_check_timer >= self._ANGRY_CHECK_INTERVAL:
                 self._angry_check_timer = 0.0
-                self._check_angry_state()
+                self._check_sad_state()
 
     def _draw(self):
         """画面描画"""
