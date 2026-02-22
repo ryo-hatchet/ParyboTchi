@@ -45,8 +45,9 @@ CHARACTER_IMAGES = {
     "listening": os.path.join(ASSETS_DIR, "character_listening.jpeg"),
     # happy がなければ listening → normal の順でフォールバック
     "happy": os.path.join(ASSETS_DIR, "character_happy.jpeg"),
-    # 24時間以上音楽を聴いていない場合の不機嫌顔
-    "angry": os.path.join(ASSETS_DIR, "Angry.jpg"),
+    # 24時間以上音楽を聴いていない場合の悲しい顔（交互に切り替えて泣いているエフェクト）
+    "sad": os.path.join(ASSETS_DIR, "character_sad.jpeg"),
+    "sad_crying": os.path.join(ASSETS_DIR, "character_sad_crying.jpeg"),
 }
 
 # --- 不機嫌になるまでの時間 ---
