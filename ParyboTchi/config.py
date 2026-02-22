@@ -49,10 +49,13 @@ CHARACTER_IMAGES = {
     # 24時間以上音楽を聴いていない場合の悲しい顔（交互に切り替えて泣いているエフェクト）
     "sad": os.path.join(ASSETS_DIR, "character_sad.jpeg"),
     "sad_crying": os.path.join(ASSETS_DIR, "character_sad_crying.jpeg"),
+    # 72時間以上音楽を聴いていない場合の死亡状態
+    "dead": os.path.join(ASSETS_DIR, "character_dead.jpeg"),
 }
 
 # --- 不機嫌になるまでの時間 ---
-ANGRY_THRESHOLD_HOURS = 24  # 最後に曲を聴いてからこの時間を超えると不機嫌に
+ANGRY_THRESHOLD_HOURS = 24  # 最後に曲を聴いてからこの時間を超えると悲しくなる
+DEAD_THRESHOLD_HOURS = 72   # 最後に曲を聴いてからこの時間を超えると死亡（3日）
 
 # --- GPIO設定 (Raspberry Pi) ---
 BUTTON_A_PIN = 22  # メインボタン (録音/決定) ※GPIO17はTP_RSTと競合するため変更
