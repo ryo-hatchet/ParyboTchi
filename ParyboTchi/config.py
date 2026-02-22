@@ -43,8 +43,9 @@ CHARACTER_IMAGES = {
     "normal": os.path.join(ASSETS_DIR, "character_normal.jpeg"),
     "blink": os.path.join(ASSETS_DIR, "character_blink.jpeg"),
     "listening": os.path.join(ASSETS_DIR, "character_listening.jpeg"),
-    # happy がなければ listening → normal の順でフォールバック
+    # 曲を見つけた時の嬉しい顔（交互に切り替えてハッピーエフェクト）
     "happy": os.path.join(ASSETS_DIR, "character_happy.jpeg"),
+    "happy2": os.path.join(ASSETS_DIR, "character_happy2.jpeg"),
     # 24時間以上音楽を聴いていない場合の悲しい顔（交互に切り替えて泣いているエフェクト）
     "sad": os.path.join(ASSETS_DIR, "character_sad.jpeg"),
     "sad_crying": os.path.join(ASSETS_DIR, "character_sad_crying.jpeg"),

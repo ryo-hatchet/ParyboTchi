@@ -45,6 +45,11 @@ class Character:
         self._SAD_CRY_INTERVAL = 0.5  # sad ↔ sad_crying の切り替え間隔（秒）
         self._show_crying = False  # False=sad, True=sad_crying
 
+        # ハッピーアニメーション用タイマー（happy エモーション時に使用）
+        self._happy_timer = 0.0
+        self._HAPPY_INTERVAL = 0.5  # happy ↔ happy2 の切り替え間隔（秒）
+        self._show_happy2 = False  # False=happy, True=happy2
+
     @staticmethod
     def _crop_center_square(surface):
         """画像の中央から正方形にクロップする。
@@ -95,6 +100,9 @@ class Character:
             if "happy" not in self._images:
                 self._images["happy"] = self._images.get(
                     "listening", self._images["normal"])
+            # happy2 がなければ happy で代用
+            if "happy2" not in self._images:
+                self._images["happy2"] = self._images["happy"]
             # blink がなければ normal で代用
             if "blink" not in self._images:
                 self._images["blink"] = self._images["normal"]
@@ -152,6 +160,17 @@ class Character:
             self._sad_cry_timer = 0.0
             self._show_crying = False
 
+        # ハッピーアニメーション（happy のときのみ）
+        if self.emotion == "happy":
+            self._happy_timer += dt
+            if self._happy_timer >= self._HAPPY_INTERVAL:
+                self._happy_timer = 0.0
+                self._show_happy2 = not self._show_happy2
+        else:
+            # happy 以外のときはリセット
+            self._happy_timer = 0.0
+            self._show_happy2 = False
+
     def draw(self, surface, stage_name, alpha=255):
         """キャラクターを描画"""
         if not self._images_loaded:
@@ -164,8 +183,14 @@ class Character:
 
     def _draw_image(self, surface, alpha=255):
         """画像で描画"""
+        # happy のとき: happy ↔ happy2 を交互表示
+        if self.emotion == "happy":
+            if self._show_happy2 and "happy2" in self._images:
+                img = self._images["happy2"]
+            else:
+                img = self._images.get("happy", self._images.get("normal"))
         # sad のとき: sad ↔ sad_crying を交互表示
-        if self.emotion == "sad":
+        elif self.emotion == "sad":
             if self._show_crying and "sad_crying" in self._images:
                 img = self._images["sad_crying"]
             else:
