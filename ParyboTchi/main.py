@@ -18,6 +18,8 @@ from data import SongCollection
 from character import Character
 from ui_main import MainScreen
 from ui_archive import ArchiveScreen
+from ui_description import DescriptionScreen
+from gemini import SongDescriber
 from hardware import InputHandler
 
 # Waveshare GC9A01 ディスプレイドライバー
@@ -184,6 +186,7 @@ class App:
     # 画面状態
     SCREEN_MAIN = 0
     SCREEN_ARCHIVE = 1
+    SCREEN_DESCRIPTION = 2
 
     def __init__(self):
         pygame.init()
@@ -210,6 +213,8 @@ class App:
         self.character = Character()
         self.main_ui = MainScreen()
         self.archive_ui = ArchiveScreen()
+        self.description_ui = DescriptionScreen()
+        self.describer = SongDescriber()
         self.input = InputHandler()
 
         # 録音の進捗計測用
@@ -265,6 +270,8 @@ class App:
             self._handle_main_input()
         elif self.current_screen == self.SCREEN_ARCHIVE:
             self._handle_archive_input()
+        elif self.current_screen == self.SCREEN_DESCRIPTION:
+            self._handle_description_input()
 
     def _start_recording(self):
         """録音を開始する共通処理"""
@@ -302,6 +309,12 @@ class App:
 
         # ボタンB or 左スワイプ: メイン画面へ戻る
         if self.input.button_b_pressed or self.input.swipe_left:
+            self.current_screen = self.SCREEN_MAIN
+
+    def _handle_description_input(self):
+        """解説画面の入力処理"""
+        # タップ or ボタンA or ボタンB: メイン画面に戻る
+        if self.input.button_a_pressed or self.input.button_b_pressed or self.input.double_tap:
             self.current_screen = self.SCREEN_MAIN
 
     def _check_emotion_state(self):
@@ -357,6 +370,8 @@ class App:
                 self._angry_check_timer = 0.0
                 # 結果表示（10秒）+ happy維持（5秒）= 15秒後にnormalに戻す
                 pygame.time.set_timer(pygame.USEREVENT + 1, 15000, loops=1)
+                # Gemini APIをバックグラウンドで呼び出し
+                self.describer.describe(title, artist)
                 # レベルアップ検知
                 new_stage_name = self.collection.get_growth_stage()["name"]
                 if new_stage_name != self._prev_stage_name:
@@ -369,6 +384,42 @@ class App:
         # 解析中は表示更新
         if self.audio.is_analyzing:
             self.main_ui.recording_progress = 1.0
+
+        # 結果表示が終了 → 解説画面に遷移（Geminiの結果あり or ローディング中）
+        if (self.current_screen == self.SCREEN_MAIN
+                and self.main_ui.result_display_timer <= 0
+                and self.main_ui.result_data is None
+                and self.describer.is_busy):
+            # Gemini APIがまだ処理中 → ローディング表示で解説画面に遷移
+            title = self.audio.result["title"] if self.audio.result else ""
+            artist = self.audio.result["artist"] if self.audio.result else ""
+            self.description_ui.show(title, artist, description=None)
+            self.current_screen = self.SCREEN_DESCRIPTION
+        elif (self.current_screen == self.SCREEN_MAIN
+                and self.main_ui.result_display_timer <= 0
+                and self.main_ui.result_data is None
+                and self.describer.result):
+            # Gemini APIの結果が既に取得済み → 解説付きで解説画面に遷移
+            title = self.audio.result["title"] if self.audio.result else ""
+            artist = self.audio.result["artist"] if self.audio.result else ""
+            self.description_ui.show(title, artist, description=self.describer.result)
+            self.describer.result = None  # 消費済み
+            self.current_screen = self.SCREEN_DESCRIPTION
+
+        # 解説画面でGeminiの結果が到着したら反映
+        if self.current_screen == self.SCREEN_DESCRIPTION:
+            if self.description_ui._loading and not self.describer.is_busy:
+                if self.describer.result:
+                    self.description_ui.set_description(self.describer.result)
+                    self.describer.result = None
+                elif self.describer.error:
+                    # エラー時はメイン画面に戻る
+                    self.current_screen = self.SCREEN_MAIN
+                    self.describer.error = None
+            self.description_ui.update(dt)
+            # タイマー終了で自動的にメイン画面に戻る
+            if self.description_ui.is_finished:
+                self.current_screen = self.SCREEN_MAIN
 
         # 定期的に不機嫌状態をチェック（録音・解析中は除く）
         if not self.audio.is_busy:
@@ -383,6 +434,8 @@ class App:
             self.main_ui.draw(self.screen, self.character, self.collection, self.audio)
         elif self.current_screen == self.SCREEN_ARCHIVE:
             self.archive_ui.draw(self.screen, self.collection)
+        elif self.current_screen == self.SCREEN_DESCRIPTION:
+            self.description_ui.draw(self.screen)
 
 
 if __name__ == "__main__":
