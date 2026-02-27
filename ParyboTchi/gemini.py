@@ -33,8 +33,10 @@ class SongDescriber:
         try:
             prompt = (
                 f"「{title} / {artist}」という曲について、"
-                "100文字以内で簡潔に解説してください。"
-                "曲の特徴や背景を端的に伝えてください。"
+                "100文字以内で簡潔に解説してね。"
+                "語尾は「だよ！」「なんだ！」「だね！」のように"
+                "フレンドリーでかわいい口調でお願い。"
+                "曲の特徴や背景を端的に伝えてね。"
             )
             response = self._client.models.generate_content(
                 model=GEMINI_MODEL,
