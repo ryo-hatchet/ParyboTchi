@@ -14,9 +14,9 @@ class DescriptionScreen:
 
     def __init__(self):
         font_path = find_jp_font()
-        self.font_title = pygame.font.Font(font_path, 16)
-        self.font_artist = pygame.font.Font(font_path, 13)
-        self.font_body = pygame.font.Font(font_path, 16)
+        self.font_title = pygame.font.Font(font_path, 14)
+        self.font_artist = pygame.font.Font(font_path, 11)
+        self.font_body = pygame.font.Font(font_path, 14)
         self.font_label = pygame.font.Font(font_path, 11)
 
         self.title = ""
@@ -32,7 +32,7 @@ class DescriptionScreen:
         self.artist = artist
         if description:
             self.description = description
-            self._wrapped_lines = self._wrap_text(description, self.font_body, 200)
+            self._wrapped_lines = self._wrap_text(description, self.font_body, 170)
             self._loading = False
         else:
             self.description = ""
@@ -43,7 +43,7 @@ class DescriptionScreen:
     def set_description(self, description):
         """解説テキストを後から設定する（API応答後）"""
         self.description = description
-        self._wrapped_lines = self._wrap_text(description, self.font_body, 200)
+        self._wrapped_lines = self._wrap_text(description, self.font_body, 170)
         self._loading = False
         # テキスト設定時にタイマーをリセット
         self.display_timer = DESCRIPTION_DISPLAY_SECONDS
@@ -87,27 +87,27 @@ class DescriptionScreen:
         pygame.draw.circle(surface, BG_COLOR, (SCREEN_CENTER, SCREEN_CENTER), SCREEN_CENTER)
 
         # 上部: 曲情報
-        y = 30
+        y = 35
         title_surf = self.font_title.render(self.title, True, ACCENT_COLOR)
         title_rect = title_surf.get_rect(centerx=SCREEN_CENTER, top=y)
         # 曲名が長い場合はクリッピング
-        if title_surf.get_width() > 210:
-            truncated = self._truncate_text(self.title, self.font_title, 200)
+        if title_surf.get_width() > 180:
+            truncated = self._truncate_text(self.title, self.font_title, 170)
             title_surf = self.font_title.render(truncated, True, ACCENT_COLOR)
             title_rect = title_surf.get_rect(centerx=SCREEN_CENTER, top=y)
         surface.blit(title_surf, title_rect)
 
-        y += 22
+        y += 18
         artist_surf = self.font_artist.render(self.artist, True, GRAY)
         artist_rect = artist_surf.get_rect(centerx=SCREEN_CENTER, top=y)
         surface.blit(artist_surf, artist_rect)
 
         # 区切り線
-        y += 22
-        pygame.draw.line(surface, DARK_GRAY, (40, y), (200, y), 1)
+        y += 18
+        pygame.draw.line(surface, DARK_GRAY, (50, y), (190, y), 1)
 
         # 本文エリア
-        y += 10
+        y += 8
         if self._loading:
             # ローディング表示
             loading_surf = self.font_label.render("しらべてるよ...", True, GRAY)
@@ -119,7 +119,7 @@ class DescriptionScreen:
                 line_surf = self.font_body.render(line, True, WHITE)
                 line_rect = line_surf.get_rect(centerx=SCREEN_CENTER, top=y)
                 surface.blit(line_surf, line_rect)
-                y += 22
+                y += 19
 
         # 下部: ヒント
         hint_surf = self.font_label.render("タップで戻る", True, DARK_GRAY)
