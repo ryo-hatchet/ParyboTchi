@@ -91,5 +91,5 @@ SPI_SPEED = 40000000
 
 # --- Gemini API設定 ---
 GEMINI_API_KEY = "AIzaSyAUnpPpAOLaGLx_zGMWMT0ALROhLYKB3TU"
-GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_MODEL = "gemini-2.5-flash"
 DESCRIPTION_DISPLAY_SECONDS = 10  # 解説画面の表示時間（秒）
