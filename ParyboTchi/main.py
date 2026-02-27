@@ -9,6 +9,7 @@
 """
 
 import time
+import socket
 import pygame
 
 from config import SCREEN_SIZE, FPS, BG_COLOR, BLACK, IS_RASPBERRY_PI, RECORD_SECONDS
@@ -228,6 +229,12 @@ class App:
         # 起動時に即チェック
         self._check_emotion_state()
 
+        # WiFi接続チェック用
+        self._wifi_connected = True
+        self._wifi_check_timer = 0.0
+        self._WIFI_CHECK_INTERVAL = 10.0  # 10秒ごとにチェック
+        self._check_wifi()
+
     def run(self):
         """メインループ"""
         try:
@@ -316,6 +323,14 @@ class App:
         # タップ or ボタンA or ボタンB: メイン画面に戻る
         if self.input.button_a_pressed or self.input.button_b_pressed or self.input.double_tap:
             self.current_screen = self.SCREEN_MAIN
+
+    def _check_wifi(self):
+        """インターネット接続をチェックする"""
+        try:
+            socket.create_connection(("8.8.8.8", 53), timeout=2)
+            self._wifi_connected = True
+        except OSError:
+            self._wifi_connected = False
 
     def _check_emotion_state(self):
         """経過時間に応じてキャラクターの感情状態を更新する
@@ -421,6 +436,12 @@ class App:
             if self.description_ui.is_finished:
                 self.current_screen = self.SCREEN_MAIN
 
+        # WiFi接続チェック（10秒ごと）
+        self._wifi_check_timer += dt
+        if self._wifi_check_timer >= self._WIFI_CHECK_INTERVAL:
+            self._wifi_check_timer = 0.0
+            self._check_wifi()
+
         # 定期的に不機嫌状態をチェック（録音・解析中は除く）
         if not self.audio.is_busy:
             self._angry_check_timer += dt
@@ -431,7 +452,7 @@ class App:
     def _draw(self):
         """画面描画"""
         if self.current_screen == self.SCREEN_MAIN:
-            self.main_ui.draw(self.screen, self.character, self.collection, self.audio)
+            self.main_ui.draw(self.screen, self.character, self.collection, self.audio, self._wifi_connected)
         elif self.current_screen == self.SCREEN_ARCHIVE:
             self.archive_ui.draw(self.screen, self.collection)
         elif self.current_screen == self.SCREEN_DESCRIPTION:

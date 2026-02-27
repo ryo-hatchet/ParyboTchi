@@ -125,7 +125,7 @@ class MainScreen:
             self.result_data = None
             self.result_display_timer = 0
 
-    def draw(self, surface, character, collection, audio):
+    def draw(self, surface, character, collection, audio, wifi_connected=True):
         """メイン画面を描画"""
         surface.fill(BLACK)
         pygame.draw.circle(surface, BG_COLOR, (SCREEN_CENTER, SCREEN_CENTER), SCREEN_CENTER)
@@ -149,6 +149,10 @@ class MainScreen:
             self._draw_analyzing_indicator(surface)
         elif audio.error and not audio.is_busy:
             self._draw_error(surface, audio.error)
+
+        # WiFi未接続警告
+        if not wifi_connected:
+            self._draw_wifi_warning(surface)
 
         # レベルアップ演出（最前面に重ねる）
         if self.levelup_timer > 0:
@@ -267,6 +271,12 @@ class MainScreen:
         star_surf = self.font_levelup_sub.render("  ".join(stars), True, (255, 220, 60))
         star_surf.set_alpha(text_alpha)
         surface.blit(star_surf, star_surf.get_rect(centerx=SCREEN_CENTER, centery=160))
+
+    def _draw_wifi_warning(self, surface):
+        """WiFi未接続の警告表示"""
+        text = self.font_small.render("ネットにつないでね！", True, (255, 80, 80))
+        rect = text.get_rect(centerx=SCREEN_CENTER, bottom=SCREEN_SIZE - 20)
+        surface.blit(text, rect)
 
     def _draw_error(self, surface, error):
         """エラー表示"""
