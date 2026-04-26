@@ -1,3 +1,5 @@
+> **アーカイブ：** これは Superhuman 風デザインの旧仕様です。GBC 風に方針変更したため `DESIGN.md`（新規）を参照してください。
+
 # Design System Inspiration of Superhuman
 
 ## 1. Visual Theme & Atmosphere
