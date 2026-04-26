@@ -1,0 +1,17 @@
+[project]
+name = "nomiboy"
+version = "0.1.0"
+description = "飲みゲー集合機 (Drinking games console for Raspberry Pi)"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-v"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
