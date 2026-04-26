@@ -26,8 +26,8 @@ class KeyboardInputScene:
 
     def on_enter(self, ctx: AppContext) -> None:
         self._ctx = ctx
-        self._text_r = TextRenderer(ctx.assets.font("PressStart2P-Regular.ttf", 18), colors.INK_DARK)
-        self._char_r = TextRenderer(ctx.assets.font("PressStart2P-Regular.ttf", 14), colors.INK_DARK)
+        self._text_r = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 18), colors.INK_DARK)
+        self._char_r = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 14), colors.INK_DARK)
         self._buttons = [
             Button(pygame.Rect(10, 290, 100, 24), "MODE", self._switch_mode, bg_color=colors.ACCENT_BERRY, fg_color=colors.INK_LIGHT),
             Button(pygame.Rect(120, 290, 80, 24), "BS", self._kb.backspace, bg_color=colors.WARNING_AMBER),

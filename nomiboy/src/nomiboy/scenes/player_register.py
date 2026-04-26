@@ -20,8 +20,8 @@ class PlayerRegisterScene:
 
     def on_enter(self, ctx: AppContext) -> None:
         self._ctx = ctx
-        self._title_r = TextRenderer(ctx.assets.font("PressStart2P-Regular.ttf", 18), colors.INK_DARK)
-        self._name_r = TextRenderer(ctx.assets.font("PressStart2P-Regular.ttf", 14), colors.INK_DARK)
+        self._title_r = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 18), colors.INK_DARK)
+        self._name_r = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 14), colors.INK_DARK)
         self._rebuild_buttons()
 
     def on_exit(self) -> None:

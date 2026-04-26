@@ -21,8 +21,8 @@ class GameSelectScene:
     def on_enter(self, ctx: AppContext) -> None:
         from nomiboy.games import GAME_META  # 遅延 import
         self._ctx = ctx
-        self._title_r = TextRenderer(ctx.assets.font("PressStart2P-Regular.ttf", 18), colors.INK_DARK)
-        self._btn_r = TextRenderer(ctx.assets.font("PressStart2P-Regular.ttf", 12), colors.INK_DARK)
+        self._title_r = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 18), colors.INK_DARK)
+        self._btn_r = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 12), colors.INK_DARK)
         self._buttons = []
         bw, bh = 130, 130
         gap = (config.SCREEN_SIZE[0] - bw * 3) // 4

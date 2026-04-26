@@ -18,8 +18,8 @@ class ResultScene:
         self._sub_r: TextRenderer | None = None
 
     def on_enter(self, ctx: AppContext) -> None:
-        self._title_r = TextRenderer(ctx.assets.font("PressStart2P-Regular.ttf", 28), colors.INK_DARK)
-        self._sub_r = TextRenderer(ctx.assets.font("PressStart2P-Regular.ttf", 12), colors.INK_DARK)
+        self._title_r = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 28), colors.INK_DARK)
+        self._sub_r = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 12), colors.INK_DARK)
         if ctx.online:
             ctx.tts.speak(f"{self._loser.name} は飲む！")
 

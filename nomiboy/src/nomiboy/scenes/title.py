@@ -22,9 +22,9 @@ class TitleScene:
 
     def on_enter(self, ctx: AppContext) -> None:
         self._ctx = ctx
-        self._title_renderer = TextRenderer(ctx.assets.font("PressStart2P-Regular.ttf", 36), colors.INK_DARK)
-        self._sub_renderer = TextRenderer(ctx.assets.font("PressStart2P-Regular.ttf", 14), colors.INK_DARK)
-        self._offline_renderer = TextRenderer(ctx.assets.font("PressStart2P-Regular.ttf", 10), colors.DANGER_RED)
+        self._title_renderer = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 36), colors.INK_DARK)
+        self._sub_renderer = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 14), colors.INK_DARK)
+        self._offline_renderer = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 10), colors.DANGER_RED)
         self._t0 = time.time()
 
     def on_exit(self) -> None:
