@@ -30,8 +30,7 @@ class SceneManager:
             return
         top = self._stack.pop()
         top.on_exit()
-        if self._stack:
-            self._stack[-1].on_enter(self._ctx)
+        # 復帰したシーンへの on_enter 再呼び出しは行わない（既に enter 済み）
 
     def replace(self, scene: Scene) -> None:
         if self._stack:

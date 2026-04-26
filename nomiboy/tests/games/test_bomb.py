@@ -41,3 +41,12 @@ def test_holder_at_explosion():
     c._remaining = 0.0
     assert c.exploded is True
     assert c.holder == 1
+
+
+def test_tick_to_zero_explodes():
+    c = BombController(player_count=2)
+    c.start()
+    c._remaining = 0.5
+    c.tick(1.0)
+    assert c.remaining == 0.0
+    assert c.exploded is True

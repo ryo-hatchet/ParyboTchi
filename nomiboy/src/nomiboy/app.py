@@ -31,7 +31,7 @@ class AppContext:
     online: bool
 
 
-def _check_online(host: str = "generativelanguage.googleapis.com", port: int = 443, timeout: float = 5.0) -> bool:
+def _check_online(host: str = "generativelanguage.googleapis.com", port: int = 443, timeout: float = 1.5) -> bool:
     try:
         with socket.create_connection((host, port), timeout=timeout):
             return True
@@ -100,6 +100,10 @@ class App:
         self._screen.fill((0, 0, 0))
         self._screen.blit(msg, msg.get_rect(center=(config.SCREEN_SIZE[0] // 2, config.SCREEN_SIZE[1] // 2)))
         pygame.display.flip()
-        pygame.time.delay(5000)
+        # 5秒消化（イベントポンプを回してOSが応答なし扱いしないように）
+        end = pygame.time.get_ticks() + 5000
+        while pygame.time.get_ticks() < end:
+            pygame.event.pump()
+            self._clock.tick(30)
         from nomiboy.scenes.title import TitleScene
         self.sm.reset_to(TitleScene(self.sm))

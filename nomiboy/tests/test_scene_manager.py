@@ -73,3 +73,12 @@ def test_event_routes_to_top():
     sm.handle_event("e")
     assert b.events == ["e"]
     assert a.events == []
+
+
+def test_pop_does_not_reenter_previous():
+    sm = SceneManager(ctx="ctx")
+    a = FakeScene("a"); b = FakeScene("b")
+    sm.push(a); sm.push(b)
+    a.enter_calls.clear()  # push 時の enter を一度クリア
+    sm.pop()
+    assert a.enter_calls == []  # 再入場なし
