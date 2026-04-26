@@ -1,0 +1,15 @@
+[Unit]
+Description=nomiboy drinking-games console
+After=multi-user.target sound.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/nomiboy
+EnvironmentFile=-/home/pi/nomiboy/.env
+ExecStart=/home/pi/nomiboy/venv/bin/python -m nomiboy
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
