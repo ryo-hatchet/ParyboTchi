@@ -5,6 +5,7 @@ import logging
 import os
 import socket
 from dataclasses import dataclass
+from types import ModuleType
 
 import pygame
 
@@ -22,7 +23,7 @@ log = logging.getLogger(__name__)
 
 @dataclass
 class AppContext:
-    config: object
+    config: ModuleType
     input_adapter: InputAdapter
     audio: AudioService
     tts: TTSService
