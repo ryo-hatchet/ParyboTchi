@@ -13,12 +13,13 @@ class AudioService:
         self._base = base_dir
         self._sfx_cache: dict[str, pygame.mixer.Sound] = {}
         self._master = master_volume
-        if not pygame.mixer.get_init():
-            try:
-                pygame.mixer.init()
-            except pygame.error:
-                # ヘッドレス・音声デバイスなしの環境（テスト等）では初期化失敗を許容
-                pass
+        if pygame.mixer.get_init():
+            pygame.mixer.quit()
+        try:
+            pygame.mixer.init(frequency=48000, size=-16, channels=2, buffer=4096)
+        except pygame.error:
+            # ヘッドレス・音声デバイスなしの環境（テスト等）では初期化失敗を許容
+            pass
 
     def set_master_volume(self, v: float) -> None:
         self._master = max(0.0, min(1.0, v))
