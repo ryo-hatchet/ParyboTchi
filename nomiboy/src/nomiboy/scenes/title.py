@@ -26,9 +26,11 @@ class TitleScene:
         self._sub_renderer = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 14), colors.INK_DARK)
         self._offline_renderer = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 10), colors.DANGER_RED)
         self._t0 = time.time()
+        ctx.audio.play_bgm("title.mp3")
 
     def on_exit(self) -> None:
-        pass
+        if self._ctx is not None:
+            self._ctx.audio.stop_bgm()
 
     def handle_event(self, event: InputEvent) -> None:
         if event.kind == InputKind.TAP:
