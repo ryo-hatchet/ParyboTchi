@@ -70,8 +70,11 @@ class PlayerRegisterScene:
     def _start(self) -> None:
         if not self._ctx.players.can_start():
             return
-        from nomiboy.scenes.game_select import GameSelectScene
-        self._sm.replace(GameSelectScene(self._sm))
+        # ドリンクコール曲をプレイヤー確定タイミングで並列プリフェッチ開始
+        # （Lyria 3 Pro は 1 曲 ~30 秒かかるため、Result までに余裕を持たせる）
+        self._ctx.call_player.prefetch(self._ctx.players.players)
+        from nomiboy.scenes.game_select_intro import GameSelectIntroScene
+        self._sm.replace(GameSelectIntroScene(self._sm))
 
     def handle_event(self, event: InputEvent) -> None:
         for b in self._buttons:

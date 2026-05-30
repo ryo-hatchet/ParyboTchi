@@ -75,7 +75,12 @@ class CallPlayer:
         try:
             sound = future.result(timeout=self._play_wait)
         except Exception as e:
-            log.warning("call play wait failed for %s: %s", player.name, e)
+            log.warning(
+                "call play wait failed for %s: %s (%s)",
+                player.name,
+                e or "timeout",
+                type(e).__name__,
+            )
             return False
         if sound is None:
             return False

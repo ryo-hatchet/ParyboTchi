@@ -172,10 +172,6 @@ class GameSelectScene:
             self._update_nav_enabled()
 
     def _launch(self, key: str) -> None:
-        # 負け確定時のドリンクコールを並列プリフェッチ（即 return、ノンブロッキング）
-        if self._ctx is not None:
-            self._ctx.call_player.prefetch(self._ctx.players.players)
-
         if key == "bomb":
             from nomiboy.games.bomb import BombScene
 
