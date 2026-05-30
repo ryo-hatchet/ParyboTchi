@@ -1,0 +1,22 @@
+[
+  {
+    "style": "upbeat J-pop party chant with crowd cheering, 120bpm, energetic vocals",
+    "lyrics_template": "Lyrics:\n[Chorus]\n{name} が飲んで！ 飲んで！ 飲んで！\n{name} が飲んで！ 飲んで！ 飲んで！",
+    "duration_sec": 12
+  },
+  {
+    "style": "retro chiptune game over fanfare with vocal shout, 8bit",
+    "lyrics_template": "Lyrics:\n[Chorus]\n{name}！ のんで のんで のんで！\n{name}！ のんで のんで のんで！",
+    "duration_sec": 10
+  },
+  {
+    "style": "EDM festival drop with cheering crowd, 128bpm",
+    "lyrics_template": "Lyrics:\n[Drop]\nDrink {name}! drink drink drink!\nDrink {name}! drink drink drink!",
+    "duration_sec": 12
+  },
+  {
+    "style": "japanese taiko drum chant with festival vibe",
+    "lyrics_template": "Lyrics:\n[Chorus]\nそーれ {name}！ 飲んで 飲んで 飲んで！",
+    "duration_sec": 10
+  }
+]
