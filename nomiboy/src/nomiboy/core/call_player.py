@@ -84,7 +84,8 @@ class CallPlayer:
             return False
         if sound is None:
             return False
-        sound.play()
+        # 最大 6 秒で自動カット（Lyria が長尺を返した時の保険）
+        sound.play(maxtime=6000)
         return True
 
     def clear(self) -> None:

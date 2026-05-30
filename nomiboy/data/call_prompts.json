@@ -1,22 +1,22 @@
 [
   {
-    "style": "upbeat J-pop party chant with crowd cheering, 120bpm, energetic vocals",
-    "lyrics_template": "Lyrics:\n[Chorus]\n{name} が飲んで！ 飲んで！ 飲んで！\n{name} が飲んで！ 飲んで！ 飲んで！",
-    "duration_sec": 12
+    "style": "very short 5 second drinking party shout, izakaya crowd chant, no intro no outro, immediate energetic vocals, japanese male voices, taiko drum hits, 140bpm",
+    "lyrics_template": "Lyrics:\n[Chorus]\n{name}は飲むぞ〜！ そーれ！ 一気！ 一気！ 一気！",
+    "duration_sec": 5
   },
   {
-    "style": "retro chiptune game over fanfare with vocal shout, 8bit",
-    "lyrics_template": "Lyrics:\n[Chorus]\n{name}！ のんで のんで のんで！\n{name}！ のんで のんで のんで！",
-    "duration_sec": 10
+    "style": "very short 5 second festival chant jingle, crowd of drunk friends cheering, no intro, punchy immediate start, 150bpm",
+    "lyrics_template": "Lyrics:\n[Chorus]\nそれいけ {name}！ 一気！ 一気！ 一気！ いっきっきー！",
+    "duration_sec": 5
   },
   {
-    "style": "EDM festival drop with cheering crowd, 128bpm",
-    "lyrics_template": "Lyrics:\n[Drop]\nDrink {name}! drink drink drink!\nDrink {name}! drink drink drink!",
-    "duration_sec": 12
+    "style": "very short 5 second EDM drop jingle, party crowd shouting, no intro no buildup, instant energy, 130bpm",
+    "lyrics_template": "Lyrics:\n[Drop]\n{name}！ 飲み干せ！ そーれ！ 一気！ 一気！",
+    "duration_sec": 5
   },
   {
-    "style": "japanese taiko drum chant with festival vibe",
-    "lyrics_template": "Lyrics:\n[Chorus]\nそーれ {name}！ 飲んで 飲んで 飲んで！",
-    "duration_sec": 10
+    "style": "very short 5 second cheerful party countdown chant, izakaya vibe, taiko and clapping, no intro, immediate start, 145bpm",
+    "lyrics_template": "Lyrics:\n[Chorus]\n乾杯！ {name}！ 一気！ 一気！ 一気！",
+    "duration_sec": 5
   }
 ]
