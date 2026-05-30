@@ -14,7 +14,7 @@ from nomiboy.core.input_adapter import InputEvent, InputKind
 from nomiboy.core.widgets.button import Button
 
 
-_MENU_BTN_RECT = pygame.Rect(398, 8, 74, 26)
+_MENU_BTN_RECT = pygame.Rect(380, 4, 96, 40)
 _POPUP_BTN_W = 220
 _POPUP_BTN_H = 52
 _POPUP_BACK_RECT = pygame.Rect(

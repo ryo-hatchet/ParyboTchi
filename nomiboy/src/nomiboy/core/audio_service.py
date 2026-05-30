@@ -9,7 +9,7 @@ from nomiboy.config import ASSETS_DIR
 
 
 class AudioService:
-    def __init__(self, base_dir: Path = ASSETS_DIR, master_volume: float = 0.7) -> None:
+    def __init__(self, base_dir: Path = ASSETS_DIR, master_volume: float = 1.0) -> None:
         self._base = base_dir
         self._sfx_cache: dict[str, pygame.mixer.Sound] = {}
         self._master = master_volume

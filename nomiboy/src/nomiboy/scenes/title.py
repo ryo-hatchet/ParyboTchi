@@ -40,11 +40,13 @@ class TitleScene:
         ctx.audio.play_bgm("title.mp3")
 
     def on_exit(self) -> None:
-        if self._ctx is not None:
-            self._ctx.audio.stop_bgm()
+        # BGM は PlayerRegister でも継続させたいのでここでは停止しない
+        pass
 
     def handle_event(self, event: InputEvent) -> None:
         if event.kind == InputKind.TAP:
+            if self._ctx is not None:
+                self._ctx.audio.play_se("start.wav")
             from nomiboy.scenes.player_register import PlayerRegisterScene
             self._sm.replace(PlayerRegisterScene(self._sm))
 

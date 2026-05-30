@@ -76,9 +76,16 @@ def step(text: str, pending: str, ch: str) -> tuple[str, str]:
     """
     pending = pending + ch
     while pending:
-        # 促音: 同じ子音が連続したら小さい っ
+        # 促音: 子音 + 同じ子音 (len==2) → 3文字目を待機（タップ二重発火対策）
         if (
-            len(pending) >= 2
+            len(pending) == 2
+            and pending[0] == pending[1]
+            and pending[0] in _DOUBLE_CONSONANTS
+        ):
+            return text, pending
+        # 促音: 子音 + 同じ子音 + 何か（len>=3）→ 小さい っ + 残りで再評価
+        if (
+            len(pending) >= 3
             and pending[0] == pending[1]
             and pending[0] in _DOUBLE_CONSONANTS
         ):
@@ -124,6 +131,15 @@ def step(text: str, pending: str, ch: str) -> tuple[str, str]:
 def flush(text: str, pending: str) -> tuple[str, str]:
     """確定操作時の最終フラッシュ。pending に残っているものを可能なら変換。"""
     while pending:
+        # 促音残り (例: "tt") → っ
+        if (
+            len(pending) >= 2
+            and pending[0] == pending[1]
+            and pending[0] in _DOUBLE_CONSONANTS
+        ):
+            text += "っ"
+            pending = pending[1:]
+            continue
         if pending in _TABLE:
             text += _TABLE[pending]
             pending = ""

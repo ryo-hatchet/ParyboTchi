@@ -31,6 +31,8 @@ class GameSelectIntroScene:
             ctx.assets.font("DotGothic16-Regular.ttf", 24), colors.INK_DARK
         )
         self._t = 0.0
+        # タイトル BGM をここで終了
+        ctx.audio.stop_bgm()
 
     def on_exit(self) -> None:
         pass
