@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<labwc_config>
+  <windowRules>
+    <windowRule identifier="*">
+      <action name="Maximize" direction="both"/>
+    </windowRule>
+  </windowRules>
+</labwc_config>
