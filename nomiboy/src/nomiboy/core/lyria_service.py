@@ -44,6 +44,7 @@ class LyriaService:
 
     def _generate(self, player_name: str, template: CallTemplate) -> bytes | None:
         prompt = self._build_prompt(player_name, template)
+        log.info("Lyria request for %s, prompt: %s", player_name, prompt[:120])
         client = genai.Client(api_key=self._api_key)
         response = client.models.generate_content(
             model=self._model,
@@ -53,10 +54,30 @@ class LyriaService:
             ),
         )
         if not response.candidates:
+            finish_info = getattr(response, "prompt_feedback", None)
+            log.warning(
+                "Lyria response has no candidates for %s, prompt_feedback=%s",
+                player_name,
+                finish_info,
+            )
             return None
-        parts = response.candidates[0].content.parts
-        for part in parts:
-            data = getattr(getattr(part, "inline_data", None), "data", None)
+        cand = response.candidates[0]
+        finish_reason = getattr(cand, "finish_reason", None)
+        log.info("Lyria candidate finish_reason=%s for %s", finish_reason, player_name)
+        parts = cand.content.parts if cand.content else []
+        for i, part in enumerate(parts):
+            inline = getattr(part, "inline_data", None)
+            text = getattr(part, "text", None)
+            mime = getattr(inline, "mime_type", None) if inline else None
+            data = getattr(inline, "data", None) if inline else None
+            data_len = len(data) if data else 0
+            log.info(
+                "Lyria part[%d] mime=%s data_len=%d text=%s",
+                i,
+                mime,
+                data_len,
+                (text or "")[:80],
+            )
             if data:
                 return data if isinstance(data, bytes) else bytes(data)
         return None
