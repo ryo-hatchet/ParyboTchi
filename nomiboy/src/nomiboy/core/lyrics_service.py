@@ -41,6 +41,28 @@ def _default_lyrics(genre: str, names: list[str]) -> str:
     )
 
 
+_MINORITY_PROMPT = (
+    "あなたは飲み会用 YES/NO クイズの問題作成者です。"
+    "以下のルールで {n} 個の質問を作ってください:\n"
+    "- 飲み会で答えやすい二択（YES / NO で答えられる）\n"
+    "- ちょっと際どいけど嫌悪感ない範囲、しっとり系よりも盛り上がる系\n"
+    "- 「私は XX 派」「私は XX したことある」「私は XX 派」のような自己申告型\n"
+    "- 答えが分かれそうなものを選ぶ\n"
+    "- 各質問は 30 文字以内\n"
+    "- 句読点や記号無しで簡潔に\n\n"
+    "返答は質問のみを 1 行ずつ、{n} 行で。番号や記号も付けない。"
+)
+
+
+_DEFAULT_MINORITY_QUESTIONS = [
+    "ビール派？ (YES) / 焼酎派？ (NO)",
+    "カラオケで本気で歌う？",
+    "朝まで飲んだことある？",
+    "酔うとよく喋るタイプ？",
+    "二日酔いに弱い？",
+]
+
+
 class LyricsService:
     def __init__(
         self,
@@ -51,6 +73,42 @@ class LyricsService:
         self._api_key = api_key
         self._model = model
         self._timeout = timeout_sec
+
+    def generate_minority_questions(self, n: int = 5) -> list[str]:
+        """YES/NO 質問を n 件生成。失敗時はデフォルトを返す。"""
+        if not self._api_key:
+            return list(_DEFAULT_MINORITY_QUESTIONS)
+        try:
+            client = genai.Client(api_key=self._api_key)
+            prompt = _MINORITY_PROMPT.format(n=n)
+            response = client.models.generate_content(
+                model=self._model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_modalities=["TEXT"],
+                    temperature=1.2,
+                ),
+            )
+            if not response.candidates:
+                return list(_DEFAULT_MINORITY_QUESTIONS)
+            text = ""
+            parts = response.candidates[0].content.parts if response.candidates[0].content else []
+            for part in parts:
+                t = getattr(part, "text", None)
+                if t:
+                    text += t
+            lines = [
+                ln.strip().lstrip("0123456789.- ").strip()
+                for ln in text.splitlines()
+                if ln.strip()
+            ]
+            lines = [ln for ln in lines if ln]
+            if not lines:
+                return list(_DEFAULT_MINORITY_QUESTIONS)
+            return lines[:n] if len(lines) >= n else lines + _DEFAULT_MINORITY_QUESTIONS[: n - len(lines)]
+        except Exception as e:
+            log.warning("Minority questions generation failed: %s", e)
+            return list(_DEFAULT_MINORITY_QUESTIONS)
 
     def generate_song_lyrics(
         self,

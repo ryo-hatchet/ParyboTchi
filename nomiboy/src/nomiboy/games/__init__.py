@@ -19,4 +19,5 @@ GAME_META: list[GameMeta] = [
     GameMeta(key="odai", title="ODAI", icon="odai.png", min_players=2, max_players=4),
     GameMeta(key="russian_tap", title="ロシアン飲酒", icon=None, min_players=2, max_players=8),
     GameMeta(key="karaoke", title="カラオケ", icon=None, min_players=2, max_players=8),
+    GameMeta(key="minority", title="少数派SHOT", icon=None, min_players=2, max_players=8),
 ]

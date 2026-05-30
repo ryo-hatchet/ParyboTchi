@@ -53,6 +53,10 @@ def _game_factory(key: str):
         from nomiboy.games.karaoke import KaraokeScene
 
         return lambda sm: KaraokeScene(sm)
+    if key == "minority":
+        from nomiboy.games.minority import MinorityScene
+
+        return lambda sm: MinorityScene(sm)
     return None
 
 

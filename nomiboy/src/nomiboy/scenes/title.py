@@ -46,7 +46,7 @@ class TitleScene:
     def handle_event(self, event: InputEvent) -> None:
         if event.kind == InputKind.TAP:
             if self._ctx is not None:
-                self._ctx.audio.play_se("start.wav")
+                self._ctx.audio.play_se("kanpai.mp3")
             from nomiboy.scenes.player_register import PlayerRegisterScene
             self._sm.replace(PlayerRegisterScene(self._sm))
 
