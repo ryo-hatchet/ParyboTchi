@@ -13,7 +13,9 @@ from nomiboy import config
 from nomiboy.colors import BG_PRIMARY, DANGER_RED
 from nomiboy.core.asset_loader import AssetLoader
 from nomiboy.core.audio_service import AudioService
+from nomiboy.core.call_player import CallPlayer, load_call_templates
 from nomiboy.core.input_adapter import InputAdapter
+from nomiboy.core.lyria_service import LyriaService
 from nomiboy.core.scene_manager import SceneManager
 from nomiboy.core.tts_service import TTSService
 from nomiboy.stores.player_store import PlayerStore
@@ -30,6 +32,7 @@ class AppContext:
     players: PlayerStore
     assets: AssetLoader
     online: bool
+    call_player: CallPlayer
 
 
 def _check_online(host: str = "generativelanguage.googleapis.com", port: int = 443, timeout: float = 1.5) -> bool:
@@ -52,14 +55,29 @@ class App:
         self._running = True
 
         api_key = os.environ.get("GEMINI_API_KEY")
+        lyria = LyriaService(
+            api_key=api_key,
+            model=config.LYRIA_MODEL,
+            timeout_sec=config.LYRIA_TIMEOUT_SEC,
+            disabled=config.DISABLE_LYRIA,
+        )
+        call_templates = load_call_templates(config.CALL_PROMPTS_PATH)
+        audio = AudioService()
         self.ctx = AppContext(
             config=config,
             input_adapter=InputAdapter(config.SCREEN_SIZE),
-            audio=AudioService(),
+            audio=audio,
             tts=TTSService(api_key=api_key),
             players=PlayerStore(),
             assets=AssetLoader(),
             online=_check_online(),
+            call_player=CallPlayer(
+                lyria=lyria,
+                audio=audio,
+                templates=call_templates,
+                max_workers=config.LYRIA_PREFETCH_WORKERS,
+                play_wait_sec=config.LYRIA_PLAY_WAIT_SEC,
+            ),
         )
         self.sm = SceneManager(ctx=self.ctx)
 
