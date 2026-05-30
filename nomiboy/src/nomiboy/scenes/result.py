@@ -20,7 +20,8 @@ class ResultScene:
     def on_enter(self, ctx: AppContext) -> None:
         self._title_r = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 28), colors.INK_DARK)
         self._sub_r = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 12), colors.INK_DARK)
-        if ctx.online:
+        played = ctx.call_player.play(self._loser)
+        if not played and ctx.online:
             ctx.tts.speak(f"{self._loser.name} は飲む！")
 
     def on_exit(self) -> None:
