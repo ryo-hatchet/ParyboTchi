@@ -12,6 +12,8 @@ from nomiboy.core.widgets.text import TextRenderer
 
 
 class TitleScene:
+    show_menu = False
+
     def __init__(self, scene_manager) -> None:
         self._sm = scene_manager
         self._ctx: AppContext | None = None

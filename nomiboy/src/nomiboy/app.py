@@ -18,6 +18,8 @@ from nomiboy.core.input_adapter import InputAdapter
 from nomiboy.core.lyria_service import LyriaService
 from nomiboy.core.scene_manager import SceneManager
 from nomiboy.core.tts_service import TTSService
+from nomiboy.core.widgets.menu_overlay import MenuOverlay
+from nomiboy.core.widgets.text import TextRenderer
 from nomiboy.stores.player_store import PlayerStore
 
 log = logging.getLogger(__name__)
@@ -80,6 +82,8 @@ class App:
             ),
         )
         self.sm = SceneManager(ctx=self.ctx)
+        self._menu = MenuOverlay(sm=self.sm, ctx=self.ctx)
+        self._menu_text: TextRenderer | None = None
 
     def push_initial_scene(self) -> None:
         from nomiboy.scenes.title import TitleScene
@@ -99,7 +103,11 @@ class App:
                 ev = self.ctx.input_adapter.translate(pg_event)
                 if ev is not None:
                     try:
-                        self.sm.handle_event(ev)
+                        consumed = False
+                        if self._menu.is_visible_for(self.sm.current):
+                            consumed = self._menu.handle_event(ev)
+                        if not consumed:
+                            self.sm.handle_event(ev)
                     except Exception:
                         log.exception("Scene event error")
                         self._show_fatal_error()
@@ -107,11 +115,22 @@ class App:
                 self.sm.update(dt)
                 self._screen.fill(BG_PRIMARY)
                 self.sm.draw(self._screen)
+                if self._menu.is_visible_for(self.sm.current):
+                    self._menu.draw(self._screen, self._get_menu_text_renderer())
             except Exception:
                 log.exception("Scene update/draw error")
                 self._show_fatal_error()
             pygame.display.flip()
         pygame.quit()
+
+    def _get_menu_text_renderer(self) -> TextRenderer:
+        if self._menu_text is None:
+            from nomiboy.colors import INK_DARK
+
+            self._menu_text = TextRenderer(
+                self.ctx.assets.font("DotGothic16-Regular.ttf", 12), INK_DARK
+            )
+        return self._menu_text
 
     def _show_fatal_error(self) -> None:
         font = pygame.font.Font(None, 36)

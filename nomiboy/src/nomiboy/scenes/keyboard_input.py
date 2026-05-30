@@ -14,6 +14,8 @@ from nomiboy.core.widgets.text import TextRenderer
 
 
 class KeyboardInputScene:
+    show_menu = False
+
     def __init__(self, scene_manager, on_confirm: Callable[[str], None]) -> None:
         self._sm = scene_manager
         self._on_confirm = on_confirm
