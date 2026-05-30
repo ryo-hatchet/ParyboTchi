@@ -14,7 +14,7 @@ from nomiboy.colors import BG_PRIMARY, DANGER_RED
 from nomiboy.core.asset_loader import AssetLoader
 from nomiboy.core.audio_service import AudioService
 from nomiboy.core.call_player import CallPlayer, load_call_templates
-from nomiboy.core.input_adapter import InputAdapter
+from nomiboy.core.input_adapter import InputAdapter, InputKind
 from nomiboy.core.lyria_service import LyriaService
 from nomiboy.core.scene_manager import SceneManager
 from nomiboy.core.tts_service import TTSService
@@ -84,6 +84,9 @@ class App:
         self.sm = SceneManager(ctx=self.ctx)
         self._menu = MenuOverlay(sm=self.sm, ctx=self.ctx)
         self._menu_text: TextRenderer | None = None
+        # タップ位置可視化（NOMIBOY_DEBUG_TOUCH=1 で有効）
+        self._debug_touch = os.environ.get("NOMIBOY_DEBUG_TOUCH") == "1"
+        self._debug_taps: list[tuple[int, int, int]] = []  # (x, y, frames_left)
 
     def push_initial_scene(self) -> None:
         from nomiboy.scenes.title import TitleScene
@@ -102,6 +105,12 @@ class App:
                     break
                 ev = self.ctx.input_adapter.translate(pg_event)
                 if ev is not None:
+                    if self._debug_touch and ev.kind == InputKind.TAP:
+                        # 直近 5 件を保持、各 60 フレーム (=2 秒) 表示
+                        self._debug_taps.append((ev.x, ev.y, 60))
+                        if len(self._debug_taps) > 5:
+                            self._debug_taps.pop(0)
+                        log.info("DEBUG_TOUCH tap at (%d, %d)", ev.x, ev.y)
                     try:
                         consumed = False
                         if self._menu.is_visible_for(self.sm.current):
@@ -117,11 +126,27 @@ class App:
                 self.sm.draw(self._screen)
                 if self._menu.is_visible_for(self.sm.current):
                     self._menu.draw(self._screen, self._get_menu_text_renderer())
+                if self._debug_touch:
+                    self._draw_debug_taps()
             except Exception:
                 log.exception("Scene update/draw error")
                 self._show_fatal_error()
             pygame.display.flip()
         pygame.quit()
+
+    def _draw_debug_taps(self) -> None:
+        font = pygame.font.Font(None, 16)
+        remaining: list[tuple[int, int, int]] = []
+        for i, (x, y, ttl) in enumerate(self._debug_taps):
+            alpha = max(50, int(255 * ttl / 60))
+            pygame.draw.circle(self._screen, (255, 0, 0), (x, y), 12, width=2)
+            pygame.draw.circle(self._screen, (255, 0, 0), (x, y), 3)
+            label = f"({x},{y})"
+            surf = font.render(label, True, (255, 255, 255), (0, 0, 0))
+            self._screen.blit(surf, (x + 14, y - 8))
+            if ttl > 1:
+                remaining.append((x, y, ttl - 1))
+        self._debug_taps = remaining
 
     def _get_menu_text_renderer(self) -> TextRenderer:
         if self._menu_text is None:

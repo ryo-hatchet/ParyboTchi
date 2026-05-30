@@ -28,11 +28,13 @@ pkill -9 -x aplay 2>/dev/null || true
 
 # nomiboy を起動（labwc セッションの環境を継承）
 # パネルが NOT 反転しない構成では NOMIBOY_INVERT_COLORS は付けない
+# NOMIBOY_DEBUG_TOUCH=1 のときタップ位置可視化を有効化
 systemd-run --user --no-block --unit="${UNIT_NAME}" \
   -p Environment=PYTHONPATH=src \
   -p Environment=DISPLAY="${DISPLAY:-:0}" \
   -p Environment=WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}" \
   -p Environment=XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR}" \
+  -p Environment=NOMIBOY_DEBUG_TOUCH="${NOMIBOY_DEBUG_TOUCH:-0}" \
   --working-directory="${NOMIBOY_DIR}" \
   "${NOMIBOY_DIR}/venv/bin/python" -m nomiboy --windowed
 
