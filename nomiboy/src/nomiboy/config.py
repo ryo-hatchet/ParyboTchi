@@ -1,8 +1,9 @@
 """nomiboy 設定モジュール。
 
 環境変数：
-- NOMIBOY_FORCE_PI=1   ハード判定を強制的に Pi 扱い（再現テスト用）
-- NOMIBOY_FULLSCREEN=0 全画面を無効化（PCデバッグ用）
+- NOMIBOY_FORCE_PI=1     ハード判定を強制的に Pi 扱い（再現テスト用）
+- NOMIBOY_FULLSCREEN=0   全画面を無効化（PCデバッグ用）
+- NOMIBOY_DISABLE_LYRIA=1 Lyria ドリンクコールを無効化（オフライン/デバッグ用）
 """
 from __future__ import annotations
 
