@@ -49,6 +49,10 @@ def _game_factory(key: str):
         from nomiboy.games.russian_tap import RussianTapScene
 
         return lambda sm: RussianTapScene(sm)
+    if key == "karaoke":
+        from nomiboy.games.karaoke import KaraokeScene
+
+        return lambda sm: KaraokeScene(sm)
     return None
 
 

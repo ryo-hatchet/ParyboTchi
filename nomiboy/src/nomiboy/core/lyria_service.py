@@ -42,9 +42,22 @@ class LyriaService:
             log.warning("Lyria generation failed for %s: %s", player_name, e)
             return None
 
+    def synthesize_song(self, prompt: str) -> bytes | None:
+        """任意プロンプトで楽曲生成（カラオケ用）。"""
+        if self._disabled or not self._api_key:
+            return None
+        try:
+            return self._call_lyria(prompt, label="song")
+        except Exception as e:
+            log.warning("Lyria song generation failed: %s", e)
+            return None
+
     def _generate(self, player_name: str, template: CallTemplate) -> bytes | None:
         prompt = self._build_prompt(player_name, template)
-        log.info("Lyria request for %s, prompt: %s", player_name, prompt[:120])
+        return self._call_lyria(prompt, label=f"call:{player_name}")
+
+    def _call_lyria(self, prompt: str, label: str = "") -> bytes | None:
+        log.info("Lyria request %s, prompt: %s", label, prompt[:120])
         client = genai.Client(api_key=self._api_key)
         response = client.models.generate_content(
             model=self._model,
@@ -56,14 +69,14 @@ class LyriaService:
         if not response.candidates:
             finish_info = getattr(response, "prompt_feedback", None)
             log.warning(
-                "Lyria response has no candidates for %s, prompt_feedback=%s",
-                player_name,
+                "Lyria response has no candidates %s, prompt_feedback=%s",
+                label,
                 finish_info,
             )
             return None
         cand = response.candidates[0]
         finish_reason = getattr(cand, "finish_reason", None)
-        log.info("Lyria candidate finish_reason=%s for %s", finish_reason, player_name)
+        log.info("Lyria candidate finish_reason=%s %s", finish_reason, label)
         parts = cand.content.parts if cand.content else []
         for i, part in enumerate(parts):
             inline = getattr(part, "inline_data", None)

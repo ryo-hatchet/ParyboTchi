@@ -16,6 +16,7 @@ from nomiboy.core.audio_service import AudioService
 from nomiboy.core.call_player import CallPlayer, load_call_templates
 from nomiboy.core.input_adapter import InputAdapter, InputKind
 from nomiboy.core.lyria_service import LyriaService
+from nomiboy.core.lyrics_service import LyricsService
 from nomiboy.core.scene_manager import SceneManager
 from nomiboy.core.tts_service import TTSService
 from nomiboy.core.widgets.menu_overlay import MenuOverlay
@@ -35,6 +36,7 @@ class AppContext:
     assets: AssetLoader
     online: bool
     call_player: CallPlayer
+    lyrics: LyricsService
 
 
 def _check_online(host: str = "generativelanguage.googleapis.com", port: int = 443, timeout: float = 1.5) -> bool:
@@ -65,6 +67,11 @@ class App:
         )
         call_templates = load_call_templates(config.CALL_PROMPTS_PATH)
         audio = AudioService()
+        lyrics_svc = LyricsService(
+            api_key=api_key,
+            model=config.LYRICS_MODEL,
+            timeout_sec=config.LYRICS_TIMEOUT_SEC,
+        )
         self.ctx = AppContext(
             config=config,
             input_adapter=InputAdapter(config.SCREEN_SIZE),
@@ -80,6 +87,7 @@ class App:
                 max_workers=config.LYRIA_PREFETCH_WORKERS,
                 play_wait_sec=config.LYRIA_PLAY_WAIT_SEC,
             ),
+            lyrics=lyrics_svc,
         )
         self.sm = SceneManager(ctx=self.ctx)
         self._menu = MenuOverlay(sm=self.sm, ctx=self.ctx)

@@ -30,14 +30,23 @@ class GameStartIntroScene:
         self._next_scene_factory = next_scene_factory
         self._ctx: AppContext | None = None
         self._title_r: TextRenderer | None = None
+        self._bg: pygame.Surface | None = None
         self._t: float = 0.0
 
     def on_enter(self, ctx: AppContext) -> None:
         self._ctx = ctx
         self._title_r = TextRenderer(
-            ctx.assets.font("DotGothic16-Regular.ttf", 28), colors.INK_DARK
+            ctx.assets.font("DotGothic16-Regular.ttf", 28), colors.INK_LIGHT
         )
         self._t = 0.0
+        raw = ctx.assets.image("images/background.png")
+        scaled = pygame.transform.smoothscale(raw, config.SCREEN_SIZE)
+        if colors.INVERT_COLORS:
+            inv = pygame.Surface(scaled.get_size())
+            inv.fill((255, 255, 255))
+            inv.blit(scaled, (0, 0), special_flags=pygame.BLEND_RGB_SUB)
+            scaled = inv
+        self._bg = scaled
 
     def on_exit(self) -> None:
         pass
@@ -52,7 +61,13 @@ class GameStartIntroScene:
             self._sm.replace(self._next_scene_factory(self._sm))
 
     def draw(self, surface: pygame.Surface) -> None:
-        surface.fill(colors.BG_PRIMARY)
+        if self._bg is not None:
+            surface.blit(self._bg, (0, 0))
+        else:
+            surface.fill(colors.BG_PRIMARY)
+        overlay = pygame.Surface(config.SCREEN_SIZE, pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 120))
+        surface.blit(overlay, (0, 0))
         cx = config.SCREEN_SIZE[0] // 2
         cy = config.SCREEN_SIZE[1] // 2
         self._title_r.draw(surface, "飲みゲーSTART！", (cx, cy - 50), anchor="center")
