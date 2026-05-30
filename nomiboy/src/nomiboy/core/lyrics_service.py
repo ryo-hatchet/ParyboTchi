@@ -74,6 +74,117 @@ class LyricsService:
         self._model = model
         self._timeout = timeout_sec
 
+    def judge_yamanote_answer(
+        self, topic: str, answer: str, history: list[str]
+    ) -> tuple[bool, str] | None:
+        """山手線ゲーム判定。answer がお題に合っているか + 面白いか。
+
+        - ok=True: お題に合致、つまらなくない
+        - ok=False: ルール違反、過去回答とかぶり、または「つまらん」
+        comment は 20 字以内の煽り口調。
+
+        失敗時 None。
+        """
+        if not self._api_key:
+            return None
+        try:
+            client = genai.Client(api_key=self._api_key)
+            hist_block = "\n".join(f"- {h}" for h in history) if history else "（なし）"
+            prompt = (
+                "あなたは飲み会の山手線ゲームの審判です。\n\n"
+                f"お題: 「{topic}」\n"
+                f"既出の回答:\n{hist_block}\n\n"
+                f"プレイヤーの回答: 「{answer}」\n\n"
+                "判定ルール:\n"
+                "- お題に合致しているか\n"
+                "- 既出と被ってないか\n"
+                "- お酒の場として「面白さ/勢い」があるか\n"
+                "上記すべて OK なら ok=true。\n"
+                "ルール違反/被り/真面目すぎ/つまらないなら ok=false。\n"
+                "comment は 20 字以内、煽り口調の日本語。\n\n"
+                "JSON で返答（コードブロック禁止、生 JSON のみ）:\n"
+                '{"ok": true|false, "comment": "理由"}'
+            )
+            response = client.models.generate_content(
+                model=self._model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_modalities=["TEXT"],
+                    temperature=0.8,
+                    response_mime_type="application/json",
+                ),
+            )
+            if not response.candidates:
+                return None
+            text = ""
+            parts = response.candidates[0].content.parts if response.candidates[0].content else []
+            for part in parts:
+                t = getattr(part, "text", None)
+                if t:
+                    text += t
+            import json as _json
+
+            data = _json.loads(text)
+            ok = bool(data.get("ok", True))
+            comment = str(data.get("comment", "")).strip()[:24]
+            return (ok, comment)
+        except Exception as e:
+            log.warning("Yamanote judge failed: %s", e)
+            return None
+
+    def generate_yaba_story(self, names: list[str]) -> tuple[str, str, str] | None:
+        """全員主役のヤバ物語 + 飲む人 + 理由を返す。失敗時 None。
+
+        戻り値: (本文, 飲む人の名前, 理由 ≤30字)
+        """
+        if not self._api_key or not names:
+            return None
+        try:
+            client = genai.Client(api_key=self._api_key)
+            names_block = "\n".join(f"- {n}" for n in names)
+            prompt = (
+                "あなたは飲み会の語り部です。以下のメンバーを全員登場させる "
+                "短編ヤバストーリーを作ってください。\n"
+                f"メンバー:\n{names_block}\n\n"
+                "ルール:\n"
+                "- 200 字以内の短編\n"
+                "- 居酒屋・宴会・カラオケ等の盛り上がるシーン\n"
+                "- 全員必ず登場し、それぞれ違う行動をする\n"
+                "- 最後に「この物語で一番ヤバいやつ」を 1 人だけ名指しで指名\n"
+                "- 理由は 30 字以内、煽り口調で\n\n"
+                "JSON で返答（コードブロック禁止、生 JSON のみ）:\n"
+                '{"story": "本文…", "loser": "名前", "reason": "理由"}'
+            )
+            response = client.models.generate_content(
+                model=self._model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_modalities=["TEXT"],
+                    temperature=1.1,
+                    response_mime_type="application/json",
+                ),
+            )
+            if not response.candidates:
+                return None
+            text = ""
+            parts = response.candidates[0].content.parts if response.candidates[0].content else []
+            for part in parts:
+                t = getattr(part, "text", None)
+                if t:
+                    text += t
+            import json as _json
+
+            data = _json.loads(text)
+            story = str(data.get("story", "")).strip()
+            loser = str(data.get("loser", "")).strip()
+            reason = str(data.get("reason", "")).strip()
+            if not story or not loser:
+                return None
+            return (story, loser, reason)
+        except Exception as e:
+            log.warning("Yaba story generation failed: %s", e)
+            return None
+
     def generate_minority_questions(self, n: int = 5) -> list[str]:
         """YES/NO 質問を n 件生成。失敗時はデフォルトを返す。"""
         if not self._api_key:

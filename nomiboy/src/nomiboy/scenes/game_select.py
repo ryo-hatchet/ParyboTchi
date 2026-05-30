@@ -57,6 +57,14 @@ def _game_factory(key: str):
         from nomiboy.games.minority import MinorityScene
 
         return lambda sm: MinorityScene(sm)
+    if key == "yaba_story":
+        from nomiboy.games.yaba_story import YabaStoryScene
+
+        return lambda sm: YabaStoryScene(sm)
+    if key == "yamanote":
+        from nomiboy.games.yamanote import YamanoteScene
+
+        return lambda sm: YamanoteScene(sm)
     return None
 
 
