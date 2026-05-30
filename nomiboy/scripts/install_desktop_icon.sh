@@ -25,6 +25,28 @@ chmod +x "$DESKTOP_DST"
 if command -v gio >/dev/null 2>&1; then
   gio set "$DESKTOP_DST" metadata::trusted true || true
 fi
+# xattr 経由でも信頼フラグを立てる（Bookworm の wf-panel-pi で要求される場合あり）
+if command -v setfattr >/dev/null 2>&1; then
+  setfattr -n user.xdg.origin.url -v "" "$DESKTOP_DST" 2>/dev/null || true
+fi
+
+# nautilus / file-roller 経由の場合: gvfs metadata
+GVFS_META="$HOME/.local/share/gvfs-metadata"
+mkdir -p "$GVFS_META" 2>/dev/null || true
+
+# PCManFM の確認ダイアログを抑制（設定ファイル）
+PCMANFM_CONF="$HOME/.config/pcmanfm/LXDE-pi/pcmanfm.conf"
+if [ -f "$PCMANFM_CONF" ]; then
+  if ! grep -q "^quick_exec=1" "$PCMANFM_CONF"; then
+    # [config] セクションに quick_exec=1 を追加
+    if grep -q "^\[config\]" "$PCMANFM_CONF"; then
+      sed -i '/^\[config\]/a quick_exec=1' "$PCMANFM_CONF"
+    else
+      printf '\n[config]\nquick_exec=1\n' >> "$PCMANFM_CONF"
+    fi
+    echo "PCManFM: quick_exec=1 を追加（次回ログインで反映）"
+  fi
+fi
 
 # アプリケーションメニューにも登録
 cp -f "$DESKTOP_DST" "$APP_LOCAL_DIR/nomiboy.desktop"
