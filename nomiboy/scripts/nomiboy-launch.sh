@@ -27,8 +27,8 @@ fi
 pkill -9 -x aplay 2>/dev/null || true
 
 # nomiboy を起動（labwc セッションの環境を継承）
+# パネルが NOT 反転しない構成では NOMIBOY_INVERT_COLORS は付けない
 systemd-run --user --no-block --unit="${UNIT_NAME}" \
-  -p Environment=NOMIBOY_INVERT_COLORS=1 \
   -p Environment=PYTHONPATH=src \
   -p Environment=DISPLAY="${DISPLAY:-:0}" \
   -p Environment=WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}" \
