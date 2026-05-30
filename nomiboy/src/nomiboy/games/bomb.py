@@ -71,7 +71,6 @@ class BombScene:
         self._ctrl.start()
         self._exploded_handled = False
         self._buttons = [
-            Button(pygame.Rect(10, 10, 80, 26), "BACK", self._sm.pop, bg_color=colors.ACCENT_BERRY, fg_color=colors.INK_LIGHT),
             Button(pygame.Rect(160, 240, 160, 60), "PASS", self._ctrl.pass_to_next, bg_color=colors.BG_SECONDARY),
         ]
 

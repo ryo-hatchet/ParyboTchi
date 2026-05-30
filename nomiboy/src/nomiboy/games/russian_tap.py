@@ -117,15 +117,7 @@ class RussianTapScene:
         self._ctrl.start()
         self._explosion_timer = 0.0
         self._exploded_handled = False
-        self._buttons = [
-            Button(
-                pygame.Rect(10, 10, 80, 26),
-                "BACK",
-                self._sm.pop,
-                bg_color=colors.ACCENT_BERRY,
-                fg_color=colors.INK_LIGHT,
-            ),
-        ]
+        self._buttons = []
         self._cell_rects = [
             pygame.Rect(
                 _GRID_LEFT + (i % _GRID_COLS) * (_CELL_SIZE + _CELL_GAP),

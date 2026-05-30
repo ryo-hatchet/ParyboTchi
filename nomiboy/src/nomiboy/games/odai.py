@@ -80,7 +80,6 @@ class OdaiScene:
         self._title_r = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 14), colors.INK_DARK)
         self._body_r = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 18), colors.INK_DARK)
         self._buttons = [
-            Button(pygame.Rect(10, 10, 80, 26), "BACK", self._sm.pop, bg_color=colors.ACCENT_BERRY, fg_color=colors.INK_LIGHT),
             Button(pygame.Rect(40, 250, 160, 50), "NEXT", self._next, bg_color=colors.BG_SECONDARY),
             Button(pygame.Rect(280, 250, 160, 50), "QUIT", self._sm.pop, bg_color=colors.ACCENT_BERRY, fg_color=colors.INK_LIGHT),
         ]

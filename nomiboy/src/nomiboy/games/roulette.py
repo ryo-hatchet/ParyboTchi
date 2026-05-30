@@ -63,7 +63,6 @@ class RouletteScene:
         self._ctrl = RouletteController(player_count=ctx.players.count)
         self._ctrl.start()
         self._buttons = [
-            Button(pygame.Rect(10, 10, 80, 26), "BACK", self._sm.pop, bg_color=colors.ACCENT_BERRY, fg_color=colors.INK_LIGHT),
             Button(pygame.Rect(160, 240, 160, 60), "STOP", self._stop, bg_color=colors.BG_SECONDARY),
         ]
 
