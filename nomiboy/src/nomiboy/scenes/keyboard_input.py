@@ -31,7 +31,6 @@ class KeyboardInputScene:
         self._text_r = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 18), colors.INK_DARK)
         self._char_r = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 14), colors.INK_DARK)
         self._buttons = [
-            Button(pygame.Rect(10, 290, 100, 24), "MODE", self._switch_mode, bg_color=colors.ACCENT_BERRY, fg_color=colors.INK_LIGHT),
             Button(pygame.Rect(120, 290, 80, 24), "BS", self._kb.backspace, bg_color=colors.WARNING_AMBER),
             Button(pygame.Rect(210, 290, 80, 24), "CLR", self._kb.clear, bg_color=colors.WARNING_AMBER),
             Button(pygame.Rect(370, 290, 100, 24), "OK", self._confirm, bg_color=colors.BG_SECONDARY),
@@ -41,10 +40,6 @@ class KeyboardInputScene:
 
     def on_exit(self) -> None:
         pass
-
-    def _switch_mode(self) -> None:
-        self._kb.switch_mode()
-        self._build_grid()
 
     def _build_grid(self) -> None:
         self._char_rects = []
@@ -58,9 +53,10 @@ class KeyboardInputScene:
                 self._char_rects.append((r, ch))
 
     def _confirm(self) -> None:
-        if not self._kb.text:
+        committed = self._kb.commit()
+        if not committed:
             return
-        self._on_confirm(self._kb.text)
+        self._on_confirm(committed)
         self._sm.pop()
 
     def handle_event(self, event: InputEvent) -> None:
@@ -78,7 +74,7 @@ class KeyboardInputScene:
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill(colors.BG_PRIMARY)
-        self._text_r.draw(surface, self._kb.text or "_", (config.SCREEN_SIZE[0] // 2, 50), anchor="center")
+        self._text_r.draw(surface, self._kb.display or "_", (config.SCREEN_SIZE[0] // 2, 50), anchor="center")
         for r, ch in self._char_rects:
             pygame.draw.rect(surface, colors.INK_LIGHT, r)
             pygame.draw.rect(surface, colors.INK_DARK, r, width=1)
