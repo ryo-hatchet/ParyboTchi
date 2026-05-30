@@ -49,7 +49,7 @@ def test_play_returns_false_when_no_future():
 
 def test_prefetch_calls_lyria_for_each_player(monkeypatch):
     lyria = MagicMock()
-    lyria.synthesize_call.return_value = b"FAKEWAV"
+    lyria.synthesize_call.return_value = b"RIFF\x00\x00\x00\x00FAKEWAV"
     audio = MagicMock()
 
     fake_sound = MagicMock()
@@ -88,7 +88,7 @@ def test_prefetch_empty_list_is_noop():
 
 def test_clear_resets_state(monkeypatch):
     lyria = MagicMock()
-    lyria.synthesize_call.return_value = b"FAKE"
+    lyria.synthesize_call.return_value = b"RIFF\x00\x00\x00\x00FAKE"
     monkeypatch.setattr("nomiboy.core.call_player.pygame.mixer.Sound", lambda _bio: MagicMock())
 
     cp = CallPlayer(lyria=lyria, audio=MagicMock(), templates=_templates())
