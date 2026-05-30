@@ -9,7 +9,8 @@
 set -euo pipefail
 
 NOMIBOY_DIR="${NOMIBOY_DIR:-$HOME/ParyboTchi/nomiboy}"
-UNIT_NAME="${NOMIBOY_UNIT:-nomiboy}"
+# 既存のシステム unit (install_pi.sh の nomiboy.service) と名前衝突しないよう -app を付ける
+UNIT_NAME="${NOMIBOY_UNIT:-nomiboy-app}"
 
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 
