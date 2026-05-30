@@ -6,8 +6,13 @@ import logging
 import os
 import sys
 
-from nomiboy.app import App
-from nomiboy.config import LOG_DIR
+# SDL に touch → mouse の自動変換を切らせる（1 タップが 2 回押下扱いになるのを回避）
+# pygame import より前に設定する必要がある
+os.environ.setdefault("SDL_TOUCH_MOUSE_EVENTS", "0")
+os.environ.setdefault("SDL_MOUSE_TOUCH_EVENTS", "0")
+
+from nomiboy.app import App  # noqa: E402
+from nomiboy.config import LOG_DIR  # noqa: E402
 
 
 def _setup_logging() -> None:
