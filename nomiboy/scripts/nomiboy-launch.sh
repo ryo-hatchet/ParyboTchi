@@ -14,6 +14,15 @@ UNIT_NAME="${NOMIBOY_UNIT:-nomiboy-app}"
 
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 
+# .env がある場合は読む（GEMINI_API_KEY などを取得）
+if [ -f "${NOMIBOY_DIR}/.env" ]; then
+  set -a
+  # shellcheck disable=SC1090,SC1091
+  . "${NOMIBOY_DIR}/.env"
+  set +a
+fi
+: "${GEMINI_API_KEY:=}"
+
 # 既に起動中なら何もしない
 if systemctl --user is-active --quiet "${UNIT_NAME}.service"; then
   notify-send -t 2000 "nomiboy" "すでに起動中" 2>/dev/null || true
@@ -35,6 +44,7 @@ systemd-run --user --no-block --unit="${UNIT_NAME}" \
   -p Environment=WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}" \
   -p Environment=XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR}" \
   -p Environment=NOMIBOY_DEBUG_TOUCH="${NOMIBOY_DEBUG_TOUCH:-0}" \
+  -p Environment=GEMINI_API_KEY="${GEMINI_API_KEY}" \
   --working-directory="${NOMIBOY_DIR}" \
   "${NOMIBOY_DIR}/venv/bin/python" -m nomiboy --windowed
 
