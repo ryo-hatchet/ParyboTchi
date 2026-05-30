@@ -1,0 +1,4 @@
+touch /tmp/labwc-ran
+sleep 2
+XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-0 wlr-randr --output SPI-1 --transform 90 >> /tmp/labwc-rot.log 2>&1
+touch /tmp/labwc-done
