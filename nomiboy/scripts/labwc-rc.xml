@@ -3,6 +3,7 @@
   <libinput>
     <device category="touch">
       <mapToOutput>SPI-1</mapToOutput>
+      <calibrationMatrix>0 -1 1 1 0 0</calibrationMatrix>
     </device>
   </libinput>
   <windowRules>
