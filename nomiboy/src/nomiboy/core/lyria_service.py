@@ -7,6 +7,9 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
+from google import genai
+from google.genai import types
+
 log = logging.getLogger(__name__)
 
 
@@ -40,5 +43,29 @@ class LyriaService:
             return None
 
     def _generate(self, player_name: str, template: CallTemplate) -> bytes | None:
-        """Task 4 で実装。"""
-        raise NotImplementedError
+        prompt = self._build_prompt(player_name, template)
+        client = genai.Client(api_key=self._api_key)
+        response = client.models.generate_content(
+            model=self._model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_modalities=["AUDIO"],
+            ),
+        )
+        if not response.candidates:
+            return None
+        parts = response.candidates[0].content.parts
+        for part in parts:
+            data = getattr(getattr(part, "inline_data", None), "data", None)
+            if data:
+                return data if isinstance(data, bytes) else bytes(data)
+        return None
+
+    @staticmethod
+    def _build_prompt(player_name: str, template: CallTemplate) -> str:
+        lyrics = template.lyrics_template.replace("{name}", player_name)
+        return (
+            f"{template.style}\n"
+            f"Duration: about {template.duration_sec} seconds.\n\n"
+            f"{lyrics}"
+        )
