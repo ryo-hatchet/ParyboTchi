@@ -31,6 +31,27 @@ _DOT_GAP = 10
 _DOT_Y = 295
 
 
+def _game_factory(key: str):
+    """ゲームキー → (sm) -> GameScene のファクトリを返す。"""
+    if key == "bomb":
+        from nomiboy.games.bomb import BombScene
+
+        return lambda sm: BombScene(sm)
+    if key == "roulette":
+        from nomiboy.games.roulette import RouletteScene
+
+        return lambda sm: RouletteScene(sm)
+    if key == "odai":
+        from nomiboy.games.odai import OdaiScene
+
+        return lambda sm: OdaiScene(sm)
+    if key == "russian_tap":
+        from nomiboy.games.russian_tap import RussianTapScene
+
+        return lambda sm: RussianTapScene(sm)
+    return None
+
+
 class GameSelectScene:
     def __init__(self, scene_manager) -> None:
         self._sm = scene_manager
@@ -172,22 +193,12 @@ class GameSelectScene:
             self._update_nav_enabled()
 
     def _launch(self, key: str) -> None:
-        if key == "bomb":
-            from nomiboy.games.bomb import BombScene
+        factory = _game_factory(key)
+        if factory is None:
+            return
+        from nomiboy.scenes.game_start_intro import GameStartIntroScene
 
-            self._sm.push(BombScene(self._sm))
-        elif key == "roulette":
-            from nomiboy.games.roulette import RouletteScene
-
-            self._sm.push(RouletteScene(self._sm))
-        elif key == "odai":
-            from nomiboy.games.odai import OdaiScene
-
-            self._sm.push(OdaiScene(self._sm))
-        elif key == "russian_tap":
-            from nomiboy.games.russian_tap import RussianTapScene
-
-            self._sm.push(RussianTapScene(self._sm))
+        self._sm.push(GameStartIntroScene(self._sm, next_scene_factory=factory))
 
     def _reset_to_title(self) -> None:
         from nomiboy.scenes.title import TitleScene
