@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=nomiboy
+Comment=飲み会用ゲーム機
+Exec=/home/raspi/ParyboTchi/nomiboy/scripts/nomiboy-launch.sh
+Icon=applications-games
+Terminal=false
+Categories=Game;
+StartupNotify=false
