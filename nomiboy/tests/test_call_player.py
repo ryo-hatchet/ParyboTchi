@@ -45,3 +45,53 @@ def test_play_returns_false_when_no_future():
     audio = MagicMock()
     cp = CallPlayer(lyria=lyria, audio=audio, templates=_templates())
     assert cp.play(_player()) is False
+
+
+def test_prefetch_calls_lyria_for_each_player(monkeypatch):
+    lyria = MagicMock()
+    lyria.synthesize_call.return_value = b"FAKEWAV"
+    audio = MagicMock()
+
+    fake_sound = MagicMock()
+    monkeypatch.setattr("nomiboy.core.call_player.pygame.mixer.Sound", lambda _bio: fake_sound)
+
+    cp = CallPlayer(lyria=lyria, audio=audio, templates=_templates(), max_workers=2, play_wait_sec=2.0)
+    players = [_player(1, "たろう"), _player(2, "はなこ")]
+    cp.prefetch(players)
+
+    assert cp.play(players[0]) is True
+    assert cp.play(players[1]) is True
+    fake_sound.play.assert_called()
+    assert lyria.synthesize_call.call_count == 2
+    cp.clear()
+
+
+def test_prefetch_with_failed_generation_returns_false(monkeypatch):
+    lyria = MagicMock()
+    lyria.synthesize_call.return_value = None  # 失敗
+    audio = MagicMock()
+
+    cp = CallPlayer(lyria=lyria, audio=audio, templates=_templates(), max_workers=1, play_wait_sec=1.0)
+    p = _player(1, "たろう")
+    cp.prefetch([p])
+
+    assert cp.play(p) is False
+    cp.clear()
+
+
+def test_prefetch_empty_list_is_noop():
+    lyria = MagicMock()
+    cp = CallPlayer(lyria=lyria, audio=MagicMock(), templates=_templates())
+    cp.prefetch([])
+    assert cp.play(_player()) is False
+
+
+def test_clear_resets_state(monkeypatch):
+    lyria = MagicMock()
+    lyria.synthesize_call.return_value = b"FAKE"
+    monkeypatch.setattr("nomiboy.core.call_player.pygame.mixer.Sound", lambda _bio: MagicMock())
+
+    cp = CallPlayer(lyria=lyria, audio=MagicMock(), templates=_templates())
+    cp.prefetch([_player(1)])
+    cp.clear()
+    assert cp.play(_player(1)) is False
