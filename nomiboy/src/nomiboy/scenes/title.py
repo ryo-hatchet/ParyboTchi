@@ -17,16 +17,25 @@ class TitleScene:
     def __init__(self, scene_manager) -> None:
         self._sm = scene_manager
         self._ctx: AppContext | None = None
-        self._title_renderer: TextRenderer | None = None
-        self._sub_renderer: TextRenderer | None = None
         self._offline_renderer: TextRenderer | None = None
+        self._bg: pygame.Surface | None = None
         self._t0 = 0.0
 
     def on_enter(self, ctx: AppContext) -> None:
         self._ctx = ctx
-        self._title_renderer = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 36), colors.INK_DARK)
-        self._sub_renderer = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 14), colors.INK_DARK)
-        self._offline_renderer = TextRenderer(ctx.assets.font("DotGothic16-Regular.ttf", 10), colors.DANGER_RED)
+        self._offline_renderer = TextRenderer(
+            ctx.assets.font("DotGothic16-Regular.ttf", 10), colors.DANGER_RED
+        )
+        # 背景画像をロード & 画面サイズへ縮小（一度だけ）
+        raw = ctx.assets.image("images/title_bg.png")
+        scaled = pygame.transform.smoothscale(raw, config.SCREEN_SIZE)
+        # パネルが全色 NOT 反転する環境では画像も予め反転して打ち消す
+        if colors.INVERT_COLORS:
+            inv = pygame.Surface(scaled.get_size())
+            inv.fill((255, 255, 255))
+            inv.blit(scaled, (0, 0), special_flags=pygame.BLEND_RGB_SUB)
+            scaled = inv
+        self._bg = scaled
         self._t0 = time.time()
         ctx.audio.play_bgm("title.mp3")
 
@@ -43,9 +52,11 @@ class TitleScene:
         pass
 
     def draw(self, surface: pygame.Surface) -> None:
-        surface.fill(colors.BG_PRIMARY)
-        self._title_renderer.draw(surface, "NOMIBOY", (config.SCREEN_SIZE[0] // 2, 130), anchor="center")
-        if int((time.time() - self._t0) * 2) % 2 == 0:
-            self._sub_renderer.draw(surface, "TAP TO START", (config.SCREEN_SIZE[0] // 2, 220), anchor="center")
+        if self._bg is not None:
+            surface.blit(self._bg, (0, 0))
+        else:
+            surface.fill(colors.BG_PRIMARY)
         if not self._ctx.online:
-            self._offline_renderer.draw(surface, "OFFLINE", (config.SCREEN_SIZE[0] - 8, 8), anchor="topright")
+            self._offline_renderer.draw(
+                surface, "OFFLINE", (config.SCREEN_SIZE[0] - 8, 8), anchor="topright"
+            )
