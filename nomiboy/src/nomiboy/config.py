@@ -45,3 +45,10 @@ ASSETS_DIR = ROOT_DIR / "assets"
 DATA_DIR = ROOT_DIR / "data"
 TTS_CACHE_DIR = ASSETS_DIR / "tts_cache"
 LOG_DIR = Path.home() / ".nomiboy"
+
+LYRIA_MODEL = "lyria-3-pro-preview"
+LYRIA_TIMEOUT_SEC = 60
+LYRIA_PREFETCH_WORKERS = 4
+LYRIA_PLAY_WAIT_SEC = 1.5
+CALL_PROMPTS_PATH = DATA_DIR / "call_prompts.json"
+DISABLE_LYRIA = os.environ.get("NOMIBOY_DISABLE_LYRIA") == "1"
