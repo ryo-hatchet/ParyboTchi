@@ -25,7 +25,12 @@ class ResultScene:
             ctx.tts.speak(f"{self._loser.name} は飲む！")
 
     def on_exit(self) -> None:
-        pass
+        # コール音を完全停止（GameSelect に音が残らないよう）
+        try:
+            pygame.mixer.music.stop()
+            pygame.mixer.stop()
+        except pygame.error:
+            pass
 
     def handle_event(self, event: InputEvent) -> None:
         if event.kind == InputKind.TAP:
