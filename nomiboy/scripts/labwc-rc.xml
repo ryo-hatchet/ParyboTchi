@@ -1,5 +1,10 @@
 <?xml version="1.0"?>
 <labwc_config>
+  <libinput>
+    <device category="touch">
+      <mapToOutput>SPI-1</mapToOutput>
+    </device>
+  </libinput>
   <windowRules>
     <windowRule identifier="*">
       <action name="Maximize" direction="both"/>
