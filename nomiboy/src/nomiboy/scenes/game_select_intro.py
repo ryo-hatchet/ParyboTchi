@@ -32,15 +32,9 @@ class GameSelectIntroScene:
             ctx.assets.font("DotGothic16-Regular.ttf", 24), colors.INK_LIGHT
         )
         self._t = 0.0
-        # 背景画像をロード & 縮小
-        raw = ctx.assets.image("images/background.png")
-        scaled = pygame.transform.smoothscale(raw, config.SCREEN_SIZE)
-        if colors.INVERT_COLORS:
-            inv = pygame.Surface(scaled.get_size())
-            inv.fill((255, 255, 255))
-            inv.blit(scaled, (0, 0), special_flags=pygame.BLEND_RGB_SUB)
-            scaled = inv
-        self._bg = scaled
+        # 背景画像をアスペクト保ったままロード
+        from nomiboy.core.widgets.bg import load_background
+        self._bg = load_background(ctx, "images/background.png", config.SCREEN_SIZE)
         # タイトル BGM をここで終了
         ctx.audio.stop_bgm()
 

@@ -246,14 +246,9 @@ class KaraokeScene:
 
     def _draw_bg(self, surface: pygame.Surface) -> None:
         try:
-            raw = self._ctx.assets.image("images/background.png")  # type: ignore[union-attr]
-            scaled = pygame.transform.smoothscale(raw, config.SCREEN_SIZE)
-            if colors.INVERT_COLORS:
-                inv = pygame.Surface(scaled.get_size())
-                inv.fill((255, 255, 255))
-                inv.blit(scaled, (0, 0), special_flags=pygame.BLEND_RGB_SUB)
-                scaled = inv
-            surface.blit(scaled, (0, 0))
+            from nomiboy.core.widgets.bg import load_background
+            bg = load_background(self._ctx, "images/background.png", config.SCREEN_SIZE)
+            surface.blit(bg, (0, 0))
             overlay = pygame.Surface(config.SCREEN_SIZE, pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 160))
             surface.blit(overlay, (0, 0))
@@ -281,16 +276,10 @@ class KaraokeScene:
 
     def _draw_playing(self, surface: pygame.Surface) -> None:
         cx = config.SCREEN_SIZE[0] // 2
-        self._sub_r.draw(surface, f"♪ {self._genre}", (20, 20), anchor="topleft")
-        # 歌詞行送り: 全行数を時間で均等割
-        if self._lyric_lines:
-            duration = max(1.0, float(config.KARAOKE_DURATION_SEC))
-            idx = int((self._t / duration) * len(self._lyric_lines))
-            visible = self._lyric_lines[max(0, idx - 1) : idx + 2]
-            for i, line in enumerate(visible):
-                y = 120 + i * 38
-                color = colors.BG_SECONDARY if i == 1 else colors.INK_LIGHT
-                self._lyric_r.draw(surface, line, (cx, y), anchor="center", color=color)
+        cy = config.SCREEN_SIZE[1] // 2
+        self._title_r.draw(surface, f"♪ {self._genre}", (cx, 70), anchor="center")
+        self._sub_r.draw(surface, "AI 歌い手が熱唱中…", (cx, 120), anchor="center")
+        _draw_beer_mug(surface, cx, cy + 30, size=70)
         # 進行バー
         bar_w = 360
         bar_h = 8

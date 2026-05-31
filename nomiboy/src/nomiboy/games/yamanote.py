@@ -144,12 +144,20 @@ class YamanoteScene:
     def _build_ng_buttons(self) -> None:
         self._buttons = [
             Button(
-                rect=pygame.Rect(280, 270, 180, 36),
-                label="GameSelect へ →",
-                on_tap=self._sm.pop,
+                rect=pygame.Rect(140, 265, 200, 44),
+                label="次の人へ →",
+                on_tap=self._advance_after_ng,
                 bg_color=colors.BG_SECONDARY,
             ),
         ]
+
+    def _advance_after_ng(self) -> None:
+        # NG 後に次のプレイヤーに回す（飲んだあと続行）
+        self._buttons = []
+        self._loser = None
+        self._ai_comment = ""
+        # NG はラウンドにカウントするが、history には追加しない
+        self._advance_player()
 
     # ─────────── 状態遷移 ───────────
 
@@ -224,9 +232,11 @@ class YamanoteScene:
             players = self._ctx.players.players if self._ctx else []
             if players:
                 self._loser = players[self._current_player_idx % len(players)]
-            if self._ctx is not None and self._ctx.online and comment:
+            # TTS で「理由 + XXは飲む！」を読み上げ
+            if self._ctx is not None and self._ctx.online and self._loser:
                 try:
-                    self._ctx.tts.speak(comment)
+                    text = f"{comment} {self._loser.name} は飲む！" if comment else f"{self._loser.name} は飲む！"
+                    self._ctx.tts.speak(text)
                 except Exception:
                     pass
             self._build_ng_buttons()
@@ -253,14 +263,9 @@ class YamanoteScene:
 
     def _draw_bg(self, surface: pygame.Surface) -> None:
         try:
-            raw = self._ctx.assets.image("images/background.png")  # type: ignore[union-attr]
-            scaled = pygame.transform.smoothscale(raw, config.SCREEN_SIZE)
-            if colors.INVERT_COLORS:
-                inv = pygame.Surface(scaled.get_size())
-                inv.fill((255, 255, 255))
-                inv.blit(scaled, (0, 0), special_flags=pygame.BLEND_RGB_SUB)
-                scaled = inv
-            surface.blit(scaled, (0, 0))
+            from nomiboy.core.widgets.bg import load_background
+            bg = load_background(self._ctx, "images/background.png", config.SCREEN_SIZE)
+            surface.blit(bg, (0, 0))
             overlay = pygame.Surface(config.SCREEN_SIZE, pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 170))
             surface.blit(overlay, (0, 0))

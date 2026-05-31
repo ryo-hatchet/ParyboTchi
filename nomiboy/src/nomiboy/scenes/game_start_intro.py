@@ -39,14 +39,8 @@ class GameStartIntroScene:
             ctx.assets.font("DotGothic16-Regular.ttf", 28), colors.INK_LIGHT
         )
         self._t = 0.0
-        raw = ctx.assets.image("images/background.png")
-        scaled = pygame.transform.smoothscale(raw, config.SCREEN_SIZE)
-        if colors.INVERT_COLORS:
-            inv = pygame.Surface(scaled.get_size())
-            inv.fill((255, 255, 255))
-            inv.blit(scaled, (0, 0), special_flags=pygame.BLEND_RGB_SUB)
-            scaled = inv
-        self._bg = scaled
+        from nomiboy.core.widgets.bg import load_background
+        self._bg = load_background(ctx, "images/background.png", config.SCREEN_SIZE)
 
     def on_exit(self) -> None:
         pass

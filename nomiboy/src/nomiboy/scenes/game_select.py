@@ -212,6 +212,9 @@ class GameSelectScene:
         factory = _game_factory(key)
         if factory is None:
             return
+        # ゲーム選択時のキックオフ SE
+        if self._ctx is not None:
+            self._ctx.audio.play_se("kanpai.mp3")
         from nomiboy.scenes.game_start_intro import GameStartIntroScene
 
         self._sm.push(GameStartIntroScene(self._sm, next_scene_factory=factory))

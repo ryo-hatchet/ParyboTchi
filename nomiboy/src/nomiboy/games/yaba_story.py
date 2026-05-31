@@ -198,14 +198,9 @@ class YabaStoryScene:
 
     def _draw_bg(self, surface: pygame.Surface) -> None:
         try:
-            raw = self._ctx.assets.image("images/background.png")  # type: ignore[union-attr]
-            scaled = pygame.transform.smoothscale(raw, config.SCREEN_SIZE)
-            if colors.INVERT_COLORS:
-                inv = pygame.Surface(scaled.get_size())
-                inv.fill((255, 255, 255))
-                inv.blit(scaled, (0, 0), special_flags=pygame.BLEND_RGB_SUB)
-                scaled = inv
-            surface.blit(scaled, (0, 0))
+            from nomiboy.core.widgets.bg import load_background
+            bg = load_background(self._ctx, "images/background.png", config.SCREEN_SIZE)
+            surface.blit(bg, (0, 0))
             overlay = pygame.Surface(config.SCREEN_SIZE, pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 180))
             surface.blit(overlay, (0, 0))

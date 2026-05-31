@@ -26,16 +26,9 @@ class TitleScene:
         self._offline_renderer = TextRenderer(
             ctx.assets.font("DotGothic16-Regular.ttf", 10), colors.DANGER_RED
         )
-        # 背景画像をロード & 画面サイズへ縮小（一度だけ）
-        raw = ctx.assets.image("images/title_bg.png")
-        scaled = pygame.transform.smoothscale(raw, config.SCREEN_SIZE)
-        # パネルが全色 NOT 反転する環境では画像も予め反転して打ち消す
-        if colors.INVERT_COLORS:
-            inv = pygame.Surface(scaled.get_size())
-            inv.fill((255, 255, 255))
-            inv.blit(scaled, (0, 0), special_flags=pygame.BLEND_RGB_SUB)
-            scaled = inv
-        self._bg = scaled
+        # 背景画像をアスペクト保ったままロード
+        from nomiboy.core.widgets.bg import load_background
+        self._bg = load_background(ctx, "images/title_bg.png", config.SCREEN_SIZE)
         self._t0 = time.time()
         ctx.audio.play_bgm("title.mp3")
 
